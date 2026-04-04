@@ -1,0 +1,17 @@
+{
+  "name": "avoidrain",
+  "version": "0.1.0",
+  "description": "3D endless runner game - avoid rain, stay under balconies",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "three": "^0.160.0"
+  },
+  "devDependencies": {
+    "vite": "^5.0.0"
+  }
+}
