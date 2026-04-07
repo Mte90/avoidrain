@@ -10,6 +10,7 @@ import { DifficultyManager } from './systems/DifficultyManager.js';
 import { ScoreManager } from './systems/ScoreManager.js';
 import { UIManager } from './ui/UIManager.js';
 import { BackdropBuilder } from './world/BackdropBuilder.js';
+import { PortalManager } from './utils/PortalManager.js';
 
 export class Game {
   constructor() {
@@ -54,8 +55,9 @@ export class Game {
     directionalLight.shadow.bias = -0.0001;
     this.scene.add(directionalLight);
 
-    const hemisphereLight = new THREE.HemisphereLight(0x87CEEB, 0x8B7355, 0.3);
-    this.scene.add(hemisphereLight);
+    // Rimosso HemisphereLight per ridurre complessità shader su mobile
+    // const hemisphereLight = new THREE.HemisphereLight(0x87CEEB, 0x8B7355, 0.3);
+    // this.scene.add(hemisphereLight);
 
     this.gameState = new GameStateMachine();
     this.input = new InputManager();
@@ -76,6 +78,13 @@ export class Game {
     this.rainSystem.setDifficultyManager(this.difficultyManager);
 
     this.wetMeter = new WetMeter(this.gameState);
+    this.portalManager = new PortalManager();
+
+    // Check for portal params from previous game
+    this.portalParams = PortalManager.getPortalParams();
+    if (this.portalParams) {
+      console.log('Portal params detected:', this.portalParams);
+    }
 
     this.lastTime = performance.now();
     this.isRunning = true;
@@ -151,6 +160,8 @@ export class Game {
     this.scoreManager.reset();
     this.wetMeter.reset();
     
+    this.portalManager.dispose(this.scene);
+    
     this.player.getGroup().position.set(-3.5, 0.1, 0);
     this.player.currentSide = false;
     
@@ -166,6 +177,15 @@ export class Game {
     this.audioManager.stopFootsteps();
     this.audioManager.playGameOver();
     this.uiManager.setGameOverScore(this.scoreManager.getScore());
+    
+    const exitURL = PortalManager.createExitURL(
+      this.portalParams?.username || 'Player',
+      this.portalParams?.color || '#667eea',
+      this.scoreManager.getScore() / 100
+    );
+    this.uiManager.showExitPortal(exitURL);
+    
+    this.portalManager.build(this.scene, { x: 0, y: 2, z: -20 });
   }
 
   triggerLightning() {
@@ -190,6 +210,8 @@ export class Game {
     const state = this.gameState.getState();
 
     const playerPos = this.player.getPosition();
+    
+    this.portalManager.update(delta);
     
     // Make directional light follow player for shadows
     const directionalLight = this.scene.children.find(child => child.isDirectionalLight);

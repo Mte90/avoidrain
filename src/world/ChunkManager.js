@@ -124,7 +124,7 @@ export class ChunkManager {
       
       if (!leftOverlaps) {
       const leftBuilding = this.buildingBuilder.build(
-        { x: -6.5, y: 0, z: bz },
+        { x: -6.5, y: 0.15, z: bz },  // Raised from y: 0 to y: 0.15 to sit on ground
           2.5,
           leftHeight,
           actualLeftDepth,
@@ -159,7 +159,7 @@ export class ChunkManager {
       
       if (!rightOverlaps) {
       const rightBuilding = this.buildingBuilder.build(
-        { x: 6.5, y: 0, z: bz },
+        { x: 6.5, y: 0.15, z: bz },  // Raised from y: 0 to y: 0.15 to sit on ground
           2.5,
           rightHeight,
           actualRightDepth,
@@ -251,10 +251,10 @@ export class ChunkManager {
   spawnStreetLampsForChunk(chunk, chunkZ) {
     const streetLampBuilder = new StreetLampBuilder();
     const length = CHUNK_SIZE;
-    const spawnInterval = 15 + Math.random() * 5;
+    const spawnInterval = 12 + Math.random() * 6;  // More frequent lamps (was 15-20)
     
     for (let z = chunkZ - length / 2 + 5; z < chunkZ + length / 2; z += spawnInterval) {
-      const leftLamp = streetLampBuilder.build({ x: -5.5, y: 0, z: z });
+      const leftLamp = streetLampBuilder.build({ x: -3.5, y: 0, z: z });  // On sidewalk at -3.5 (was -7.5)
       leftLamp.traverse((child) => {
         if (child.isMesh) {
           child.castShadow = true;
@@ -263,7 +263,7 @@ export class ChunkManager {
       });
       chunk.add(leftLamp);
 
-      const rightLamp = streetLampBuilder.build({ x: 5.5, y: 0, z: z });
+      const rightLamp = streetLampBuilder.build({ x: 3.5, y: 0, z: z });  // On sidewalk at 3.5 (was 7.5)
       rightLamp.traverse((child) => {
         if (child.isMesh) {
           child.castShadow = true;

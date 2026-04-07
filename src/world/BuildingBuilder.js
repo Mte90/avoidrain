@@ -28,13 +28,13 @@ export class BuildingBuilder {
       emissive: windowLit ? windowLightColor : 0, 
       emissiveIntensity: windowLit ? 0.3 + Math.random() * 0.4 : 0
     });
-    const balconyMat = new THREE.MeshStandardMaterial({ color: 0x4A3F35, roughness: 0.85, metalness: 0.15 });
+    const balconyMat = new THREE.MeshStandardMaterial({ color: 0x5A5A5A, roughness: 0.85, metalness: 0.15 });  // Gray concrete instead of brown wood
     const balconyRailingMat = new THREE.MeshStandardMaterial({ color: 0x3A3A3A, roughness: 0.6, metalness: 0.5 });
     const roofMat = new THREE.MeshStandardMaterial({ color: 0x2C2C2C, roughness: 0.95, metalness: 0.05 });
 
     const baseHeight = 0.3;
     const baseGeo = new THREE.BoxGeometry(width, baseHeight, depth);
-    const baseMat = new THREE.MeshStandardMaterial({ color: 0x4A4A4A, roughness: 0.95, metalness: 0.05 });
+    const baseMat = new THREE.MeshStandardMaterial({ color: 0x555555, roughness: 0.95, metalness: 0.05 });  // Gray base for street-level feel
     const base = new THREE.Mesh(baseGeo, baseMat);
     base.position.set(0, baseHeight / 2, 0);
     base.receiveShadow = true;
@@ -51,8 +51,8 @@ export class BuildingBuilder {
 
     const roadDir = side === 'left' ? 1 : -1;
     const facadeX = roadDir * (width / 2 + 0.01);
-    const windowWidth = 0.5;
-    const windowHeight = 0.7;
+    const windowWidth = 0.7;  // Increased from 0.5
+    const windowHeight = 0.9;  // Increased from 0.7
     const numWindowsZ = Math.max(2, Math.floor(depth / 2.5));
     const numWindowsY = Math.max(2, Math.floor(height / 2.0));
     const windowSpacingZ = depth / (numWindowsZ + 1);
@@ -150,32 +150,65 @@ export class BuildingBuilder {
     if (hasBalcony) {
       const balconyProtrusion = 2.5;
       const balconyLength = 3.0;  // Full sidewalk coverage
-      const balconyFloorY = bottomY + height * 0.8;  // Above player head
-      const balconyThickness = 0.12;      const railingHeight = 1.0;
-      const postCount = 4;
+      
+      // Create multiple balconies at different heights
+      const numBalconies = 1 + Math.floor(Math.random() * 2);  // 1-2 balconies per building
+      const balconyFloorY = bottomY + height * 0.4;  // First balcony lower (was 0.8)
+      
+      for (let b = 0; b < numBalconies; b++) {
+        const currentBalconyY = balconyFloorY + b * (height / (numBalconies + 1));
+        const railingHeight = 1.0;
+        const postCount = 4;
 
-      const balconyX = roadDir * (width / 2 + balconyProtrusion / 2);
+        const balconyX = roadDir * (width / 2 + balconyProtrusion / 2);
 
-      const floorGeo = new THREE.BoxGeometry(balconyProtrusion, balconyThickness, balconyLength);
-      const floor = new THREE.Mesh(floorGeo, balconyMat);
-      floor.position.set(balconyX, balconyFloorY, 0);
-      floor.castShadow = true;
-      floor.receiveShadow = true;
-      group.add(floor);
+        const floorGeo = new THREE.BoxGeometry(balconyProtrusion, 0.12, balconyLength);
+        const floor = new THREE.Mesh(floorGeo, balconyMat);
+        floor.position.set(balconyX, currentBalconyY, 0);
+        floor.castShadow = true;
+        floor.receiveShadow = true;
+        group.add(floor);
 
-      const postGeo = new THREE.BoxGeometry(0.05, railingHeight, 0.05);
-      for (let i = 0; i < postCount; i++) {
-        const postZ = -balconyLength / 2 + (balconyLength / (postCount - 1)) * i;
-        const post = new THREE.Mesh(postGeo, balconyRailingMat);
-        post.position.set(balconyX + roadDir * (balconyProtrusion / 2 - 0.025), balconyFloorY + balconyThickness / 2 + railingHeight / 2, postZ);
-        post.castShadow = true;
-        group.add(post);
+        const postGeo = new THREE.BoxGeometry(0.05, railingHeight, 0.05);
+        for (let i = 0; i < postCount; i++) {
+          const postZ = -balconyLength / 2 + (balconyLength / (postCount - 1)) * i;
+          const post = new THREE.Mesh(postGeo, balconyRailingMat);
+          post.position.set(balconyX + roadDir * (balconyProtrusion / 2 - 0.025), currentBalconyY + 0.06 + railingHeight / 2, postZ);
+          post.castShadow = true;
+          group.add(post);
+        }
+
+        const topRailGeo = new THREE.BoxGeometry(balconyProtrusion + 0.1, 0.04, balconyLength);
+        const topRail = new THREE.Mesh(topRailGeo, balconyRailingMat);
+        topRail.position.set(balconyX, currentBalconyY + 0.12 + railingHeight, 0);
+        group.add(topRail);
+
+        // Add window UNDER the first balcony only (at balcony floor level)
+        // Window should be ~1.8m tall (player height) for access
+        const underBalconyWindowY = bottomY + 0.9;  // Center at 0.9m, so bottom at 0m (ground level)
+        const underBalconyWindowHeight = 1.8;  // Player height for access
+        const underBalconyWindowWidth = 0.8;  // Slightly wider than regular windows
+        
+        if (b === 0 && underBalconyWindowY + underBalconyWindowHeight / 2 < currentBalconyY - 0.2) {  // Only for first balcony
+          const underFrameGeo = new THREE.BoxGeometry(0.06, underBalconyWindowHeight + 0.08, underBalconyWindowWidth + 0.08);
+          const underWindowFrame = new THREE.Mesh(underFrameGeo, frameMat);
+          underWindowFrame.position.set(facadeX, underBalconyWindowY, 0);
+          underWindowFrame.castShadow = true;
+          group.add(underWindowFrame);
+
+          const underGlassGeo = new THREE.BoxGeometry(0.04, underBalconyWindowHeight, underBalconyWindowWidth);
+          const underWindowLit = Math.random() > 0.5;
+          const underWindowMat = new THREE.MeshStandardMaterial({
+            color: underWindowLit ? windowLightColor : 0x1a1a1a,
+            emissive: underWindowLit ? windowLightColor : 0,
+            emissiveIntensity: underWindowLit ? 0.3 + Math.random() * 0.4 : 0
+          });
+          const underWindowGlass = new THREE.Mesh(underGlassGeo, underWindowMat);
+          underWindowGlass.position.set(facadeX + roadDir * 0.03, underBalconyWindowY, 0);
+          underWindowGlass.castShadow = true;
+          group.add(underWindowGlass);
+        }
       }
-
-      const topRailGeo = new THREE.BoxGeometry(balconyProtrusion + 0.1, 0.04, balconyLength);
-      const topRail = new THREE.Mesh(topRailGeo, balconyRailingMat);
-      topRail.position.set(balconyX, balconyFloorY + balconyThickness + railingHeight, 0);
-      group.add(topRail);
 
       // Remove bottom rail to make railing open (no brown background)
       // Only top rail + posts for open feel

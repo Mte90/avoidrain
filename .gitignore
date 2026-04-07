@@ -6,3 +6,4 @@ test-results/
 dist/
 package-lock.json
 .playwright-mcp
+/*.mjs

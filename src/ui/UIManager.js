@@ -175,4 +175,31 @@ export class UIManager {
       this.elements.menuScreen.style.display = 'flex';
     }
   }
+
+  /**
+   * Show exit portal button that redirects to Vibe Jam Portal
+   * @param {string} exitURL - URL to redirect to
+   */
+  showExitPortal(exitURL) {
+    // Create or get portal button
+    let portalButton = document.getElementById('exit-portal-button');
+    
+    if (!portalButton) {
+      portalButton = document.createElement('a');
+      portalButton.id = 'exit-portal-button';
+      portalButton.href = exitURL;
+      portalButton.className = 'exit-portal-button';
+      portalButton.target = '_blank';
+      portalButton.textContent = '🌀 Vibe Jam Portal';
+      
+      // Insert before the "Press ENTER to Restart" hint
+      const gameOverScreen = document.getElementById('game-over-screen');
+      const hint = gameOverScreen.querySelector('.menu-hint');
+      if (hint) {
+        hint.insertAdjacentElement('beforebegin', portalButton);
+      }
+    } else {
+      portalButton.href = exitURL;
+    }
+  }
 }
