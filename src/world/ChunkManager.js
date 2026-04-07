@@ -27,12 +27,11 @@ export class ChunkManager {
     this.buildingBuilder = new BuildingBuilder();
     this.carBuilder = new CarBuilder();
     this.groundBuilder = new GroundBuilder();
-    this.obstacleBuilder = new ObstacleBuilder();
 
     this.cars = [];
     this.carPool = [];
     this.buildingPositions = [];
-    this.obstacles = [];
+    this.puddles = [];
     
     this.puddleBuilder = new PuddleBuilder();
     this.lastGeneratedChunkZ = 0;
@@ -226,7 +225,6 @@ export class ChunkManager {
     this.spawnCarsForChunk(chunk, chunkZ);
     this.spawnStreetLampsForChunk(chunk, chunkZ);
     this.spawnPuddlesForChunk(chunk, chunkZ);
-    this.spawnObstaclesForChunk(chunk, chunkZ);
 
     return chunk;
   }

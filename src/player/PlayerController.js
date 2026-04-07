@@ -13,6 +13,7 @@ export class PlayerController {
     
     // Player speed
     this.speed = 8.0;
+    this.obstacles = [];
     
     // Lane transition
     this.isTransitioning = false;
@@ -114,8 +115,39 @@ export class PlayerController {
     }
   }
   
+  setPosition(playerZ, chunkManager) {
+    this.playerZ = playerZ;
+    if (chunkManager) {
+      this.setObstacles(chunkManager.obstacles || []);
+      this.checkObstacleCollision();
+    }
+  }
+
   getPosition() {
     return this.group.position.clone();
+  }
+
+  setObstacles(obstacles) {
+    this.obstacles = obstacles;
+  }
+
+  checkObstacleCollision() {
+    const playerBox = new THREE.Box3().setFromCenterAndSize(
+      this.group.position,
+      new THREE.Vector3(1, 2, 1)
+    );
+
+    for (const obs of this.obstacles) {
+      const obstacleBox = new THREE.Box3().setFromObject(obs.mesh);
+      if (playerBox.intersectsBox(obstacleBox)) {
+        const dist = this.group.position.distanceTo(obs.mesh.position);
+        if (dist > 0) {
+          const pushDirection = new THREE.Vector3().subVectors(this.group.position, obs.mesh.position).normalize();
+          pushDirection.y = 0;
+          this.group.position.add(pushDirection.multiplyScalar(0.5));
+        }
+      }
+    }
   }
   
   setHairWetness(wetnessPercent) {

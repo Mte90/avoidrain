@@ -4,6 +4,7 @@ import { GameState } from './GameState.js';
 const FILL_RATE = 10;
 const DRAIN_RATE = 15;
 const CAR_HIT_PENALTY = 20;
+const PUDDLE_WETNESS = 5;
 
 const PLAYER_RADIUS = 0.3;
 const BALCONY_WIDTH = 2.0;
@@ -12,6 +13,7 @@ const CAR_WIDTH = 2;
 const CAR_DEPTH = 1;
 const LEFT_SIDEWALK_X = -2.5;
 const RIGHT_SIDEWALK_X = 2.5;
+const PUDDLE_COLLISION_COOLDOWN = 0.5;
 
 export class WetMeter {
   constructor(gameState) {
@@ -115,7 +117,27 @@ export class WetMeter {
     return false;
   }
 
-  update(delta, playerPosition, chunks, cars) {
+  checkPuddleCollision(playerPosition, puddles) {
+    const currentTime = performance.now() * 0.001;
+    const playerX = playerPosition.x;
+    const playerZ = playerPosition.z;
+    
+    for (const puddle of puddles) {
+      const puddleMesh = puddle.mesh;
+      if (!puddleMesh.parent) continue;
+      
+      const puddleX = puddleMesh.position.x;
+      const puddleZ = puddleMesh.position.z;
+      const distance = Math.sqrt((playerX - puddleX) ** 2 + (playerZ - puddleZ) ** 2);
+      
+      if (distance < 0.5 && currentTime - puddle.lastCollision > PUDDLE_COLLISION_COOLDOWN) {
+        this.wetMeter = Math.min(this.wetMeter + PUDDLE_WETNESS, 100);
+        puddle.lastCollision = currentTime;
+      }
+    }
+  }
+
+  update(delta, playerPosition, chunks, cars, puddles) {
     if (this.gameState.getState() !== GameState.PLAYING) {
       return false;
     }
@@ -138,6 +160,10 @@ export class WetMeter {
       if (Math.abs(this.pushbackVelocity) < 0.1) {
         this.pushbackVelocity = 0;
       }
+    }
+    
+    if (puddles) {
+      this.checkPuddleCollision(playerPosition, puddles);
     }
     
     this.gameState.wetMeter = this.wetMeter;
