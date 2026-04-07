@@ -149,9 +149,9 @@ export class BuildingBuilder {
 
     if (hasBalcony) {
       const balconyProtrusion = 2.5;
-const balconyLength = 3.0;  // Full sidewalk coverage
-const balconyFloorY = bottomY + height * 0.8;  // Above player head      const balconyThickness = 0.12;
-      const railingHeight = 1.0;
+      const balconyLength = 3.0;  // Full sidewalk coverage
+      const balconyFloorY = bottomY + height * 0.8;  // Above player head
+      const balconyThickness = 0.12;      const railingHeight = 1.0;
       const postCount = 4;
 
       const balconyX = roadDir * (width / 2 + balconyProtrusion / 2);

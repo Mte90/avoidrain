@@ -208,7 +208,7 @@ export class Game {
       this.gameTime += delta;
 
       this.difficultyManager.update(delta);
-      this.player.update(delta);
+      this.player.update(delta, this.chunkManager);
       this.chunkManager.update(playerPos.z);
       this.chunkManager.groundBuilder.updateWetness(this.difficultyManager.getRainIntensity());
       this.chunkManager.updateCars(delta);
@@ -218,7 +218,8 @@ export class Game {
 
       const chunks = this.chunkManager.getActiveChunks();
       const cars = this.chunkManager.cars;
-      const wasHit = this.wetMeter.update(delta, playerPos, chunks, cars);
+      const puddles = this.chunkManager.puddles;
+      const wasHit = this.wetMeter.update(delta, playerPos, chunks, cars, puddles);
       
       if (wasHit) {
         this.audioManager.playSplash();

@@ -8,7 +8,7 @@
 
 import { chromium } from 'playwright';
 
-const DEV_SERVER_URL = 'http://localhost:5174';
+const DEV_SERVER_URL = 'http://localhost:5173/avoidrain/';
 const EVIDENCE_FILE = '.sisyphus/evidence/task-20-gameplay-test.log';
 const STARTUP_WAIT = 3000;
 const GAMEPLAY_WAIT = 5000;
@@ -50,12 +50,17 @@ async function runTest() {
   const context = await browser.newContext();
   const page = await context.newPage();
 
-  // Collect console messages
+  // Collect ALL console messages for debugging
   const consoleMessages = [];
   page.on('console', msg => {
-    if (msg.type() === 'error') {
-      consoleMessages.push(`ERROR: ${msg.text()}`);
-    }
+    const text = msg.text();
+    const type = msg.type();
+    consoleMessages.push(`[${type.toUpperCase()}] ${text}`);
+    log(`Browser console: [${type}] ${text}`);
+  });
+  
+  page.on('pageerror', err => {
+    log(`PAGE ERROR: ${err.message}`);
   });
 
   try {
@@ -73,21 +78,25 @@ async function runTest() {
     log(`Menu screen visible: ${menuVisible}`);
     
     // Check for "Press ENTER to Start" text
-    const menuHint = await page.locator('.menu-hint').textContent();
+    const menuHint = await page.locator('#menu-screen .menu-hint').first().textContent();
     log(`Menu hint text: ${menuHint}`);
 
-    // Wait for game to fully load
-    await page.waitForFunction(() => window.game !== undefined, { timeout: 10000 });
-    log('Game instance available on window.game');
+    // Wait for game to fully load (check canvas as proxy)
+    await page.waitForSelector('#canvas-container canvas', { timeout: 15000 });
+    log('Canvas rendered - game is loading');
+    
+    // Give extra time for game initialization
+    await page.waitForTimeout(2000);
+    
+    // Try to get game instance
+    const hasGame = await page.evaluate(() => typeof window.game !== 'undefined');
+    log(`Game instance available: ${hasGame}`);
 
     // Check initial game state is MENU
     const initialState = await page.evaluate(() => window.game.getGameState());
     log(`Initial game state: ${initialState}`);
     
-    const stateEnum = await page.evaluate(() => {
-      const { GameState } = window.game.gameState.constructor;
-      return { MENU: GameState.MENU, PLAYING: GameState.PLAYING };
-    });
+    const stateEnum = { MENU: 'MENU', PLAYING: 'PLAYING' };
     log(`GameState enum: MENU=${stateEnum.MENU}, PLAYING=${stateEnum.PLAYING}`);
 
     // Press Enter to start game
