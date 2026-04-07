@@ -289,8 +289,8 @@ export class ChunkManager {
         } else {
           // Sidewalk area
           puddleX = Math.random() > 0.5 
-            ? -roadWidth / 2 - sidewalkWidth / 2 - 0.5 + Math.random() * sidewalkWidth  // Left sidewalk
-            : roadWidth / 2 + sidewalkWidth / 2 - sidewalkWidth + Math.random() * sidewalkWidth;  // Right sidewalk
+            ? -4.5 / 2 - 3.0 / 2 - 0.5 + Math.random() * 3.0  // Left sidewalk
+            : 4.5 / 2 + 3.0 / 2 - 3.0 + Math.random() * 3.0;  // Right sidewalk
         }
         
         const puddle = this.puddleBuilder.build({ x: puddleX, y: 0, z: z });
