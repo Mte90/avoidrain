@@ -41,9 +41,12 @@ export class GroundBuilder {
     const curbColor = CURB_COLORS[Math.floor(Math.random() * CURB_COLORS.length)];
     this.curbMat.color.setHex(curbColor);
 
+    // Raise everything by 0.5m so road is clearly visible
+    const groundY = 0.5;
+
     const leftSidewalkGeo = new THREE.BoxGeometry(sidewalkWidth, 0.12, length);
     const leftSidewalk = new THREE.Mesh(leftSidewalkGeo, this.sidingMat);
-    leftSidewalk.position.set(-roadWidth / 2 - sidewalkWidth / 2, 0.02, 0);
+    leftSidewalk.position.set(-roadWidth / 2 - sidewalkWidth / 2, groundY + 0.02, 0);
     leftSidewalk.receiveShadow = true;
     group.add(leftSidewalk);
 

@@ -41,11 +41,32 @@ export class ChunkManager {
     this.difficultyManager = difficultyManager;
   }
 
-  initialize(startZ) {
-    this.playerZ = startZ;
+  initialize(scene) {
+    this.scene = scene;
+    this.chunkPool = [];
+    this.activeChunks = [];
+    this.currentChunkZ = 0;
+    this.playerZ = 0;
+    this.chunkAheadDistance = CHUNK_SIZE * 3;
+    this.chunkRecycleDistance = CHUNK_SIZE / 2;
+
+    this.buildingBuilder = new BuildingBuilder();
+    this.carBuilder = new CarBuilder();
+    this.groundBuilder = new GroundBuilder();
+    this.puddleBuilder = new PuddleBuilder();
+    this.streetLampBuilder = new StreetLampBuilder();
+    
+    this.cars = [];
+    this.carPool = [];
     this.buildingPositions = [];
-    const endZ = startZ + this.chunkAheadDistance;
-    this.currentChunkZ = this.getChunkStart(startZ - this.chunkAheadDistance);
+    this.puddles = [];
+  }
+
+  resize(position = { x: 0, y: 0, z: 0 }) {
+    this.playerZ = position.z;
+    this.buildingPositions = [];
+    const endZ = position.z + this.chunkAheadDistance;
+    this.currentChunkZ = this.getChunkStart(position.z - this.chunkAheadDistance);
     
     while (this.currentChunkZ <= endZ) {
       this.spawnChunk(this.currentChunkZ);
@@ -193,10 +214,12 @@ export class ChunkManager {
       false,  // No balconies on backdrop
       'left'
     );
-    // Make darker for distance effect
+    // Make more transparent for distance effect (opaqueness was 1 - previous 0.4)
     backdropLeft.traverse((child) => {
       if (child.isMesh && child.material) {
-        child.material.color.multiplyScalar(0.4);
+        child.material.opacity = 0.25 * child.material.opacity;  // More transparent
+        child.material.transparent = true;
+        child.material.color.multiplyScalar(0.35);  // Darker for distance
         child.castShadow = false;
         child.receiveShadow = false;
       }
@@ -212,10 +235,12 @@ export class ChunkManager {
       false,  // No balconies on backdrop
       'right'
     );
-    // Make darker for distance effect
+    // Make more transparent for distance effect
     backdropRight.traverse((child) => {
       if (child.isMesh && child.material) {
-        child.material.color.multiplyScalar(0.4);
+        child.material.opacity = 0.25 * child.material.opacity;  // More transparent
+        child.material.transparent = true;
+        child.material.color.multiplyScalar(0.35);  // Darker for distance
         child.castShadow = false;
         child.receiveShadow = false;
       }
