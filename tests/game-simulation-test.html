@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html>
+<head><title>Full Game Simulation Test</title></head>
+<body>
+<pre id="output"></pre>
+<script type="module">
+import * as THREE from 'three';
+import { ChunkManager } from '../src/world/ChunkManager.js';
+
+const log = (msg) => {
+  document.getElementById('output').textContent += msg + '\n';
+  console.log(msg);
+};
+
+let passed = 0;
+let failed = 0;
+
+function assert(condition, name) {
+  if (condition) { log(`✓ ${name}`); passed++; }
+  else { log(`✗ ${name}`); failed++; }
+}
+
+class MockScene {
+  constructor() { this.children = []; }
+  add(obj) { this.children.push(obj); }
+  remove(obj) { const i = this.children.indexOf(obj); if (i > -1) this.children.splice(i, 1); }
+}
+
+const CHUNK_SIZE = 40;
+const NUM_PER_SIDE = 2;
+const PLAYER_SPEED = 5;
+const GAME_DURATION = 60;
+
+function getWorldBounds(obj) {
+  const box = new THREE.Box3().setFromObject(obj);
+  return box;
+}
+
+function boxesOverlap(a, b) {
+  return a.min.x < b.max.x && a.max.x > b.min.x &&
+         a.min.y < b.max.y && a.max.y > b.min.y &&
+         a.min.z < b.max.z && a.max.z > b.min.z;
+}
+
+function boxesOverlapZ(a, b) {
+  return a.min.z < b.max.z && a.max.z > b.min.z;
+}
+
+function getBuildingsInScene(scene) {
+  const buildings = [];
+  scene.children.forEach(chunk => {
+    if (!(chunk instanceof THREE.Group)) return;
+    chunk.children.forEach(child => {
+      if (child instanceof THREE.Group && child.position.x !== 0) {
+        buildings.push({ building: child, chunkZ: chunk.position.z });
+      }
+    });
+  });
+  return buildings;
+}
+
+log('\n=== Full Game Simulation Test ===\n');
+
+const scene = new MockScene();
+const cm = new ChunkManager(scene);
+cm.initialize(0);
+let playerZ = 0;
+const allBuildingsEver = [];
+
+log(`Simulating ${GAME_DURATION} seconds of gameplay...\n`);
+
+for (let t = 0; t < GAME_DURATION; t++) {
+  playerZ -= PLAYER_SPEED;
+  cm.update(playerZ);
+  
+  if (t % 10 === 0) {
+    const buildings = getBuildingsInScene(scene);
+    log(`t=${t}s, playerZ=${playerZ.toFixed(0)}, chunks=${scene.children.length}, buildings=${buildings.length}`);
+  }
+}
+
+log('\n--- Test 1: Final building count is reasonable ---');
+{
+  const buildings = getBuildingsInScene(scene);
+  const chunks = scene.children.length;
+  const expectedMax = chunks * NUM_PER_SIDE * 2;
+  log(`  Chunks: ${chunks}, Buildings: ${buildings.length}, Expected max: ${expectedMax}`);
+  assert(buildings.length <= expectedMax, `Buildings <= ${expectedMax} (got ${buildings.length})`);
+}
+
+log('\n--- Test 2: No overlapping buildings (same side) ---');
+{
+  const buildings = getBuildingsInScene(scene);
+  const left = [], right = [];
+  
+  buildings.forEach((entry, i) => {
+    const bounds = getWorldBounds(entry.building);
+    bounds.min.z += entry.chunkZ;
+    bounds.max.z += entry.chunkZ;
+    const x = entry.building.position.x;
+    if (x < 0) left.push({ idx: i, bounds, x, chunkZ: entry.chunkZ });
+    else right.push({ idx: i, bounds, x, chunkZ: entry.chunkZ });
+  });
+  
+  let overlaps = 0;
+  const checkSide = (arr, label) => {
+    for (let i = 0; i < arr.length; i++) {
+      for (let j = i + 1; j < arr.length; j++) {
+        if (boxesOverlap(arr[i].bounds, arr[j].bounds)) {
+          const a = arr[i], b = arr[j];
+          log(`  OVERLAP ${label}: ${a.idx}@z=${a.chunkZ.toFixed(0)} [${a.bounds.min.z.toFixed(0)},${a.bounds.max.z.toFixed(0)}] vs ${b.idx}@z=${b.chunkZ.toFixed(0)} [${b.bounds.min.z.toFixed(0)},${b.bounds.max.z.toFixed(0)}]`);
+          overlaps++;
+          if (overlaps >= 5) return;
+        }
+      }
+    }
+  };
+  
+  log(`  Checking ${left.length} left buildings...`);
+  checkSide(left, 'LEFT');
+  log(`  Checking ${right.length} right buildings...`);
+  checkSide(right, 'RIGHT');
+  assert(overlaps === 0, `No overlapping buildings (found ${overlaps})`);
+}
+
+log('\n--- Test 3: Buildings on correct sides ---');
+{
+  const buildings = getBuildingsInScene(scene);
+  const leftCount = buildings.filter(e => e.building.position.x < 0).length;
+  const rightCount = buildings.filter(e => e.building.position.x > 0).length;
+  log(`  Left: ${leftCount}, Right: ${rightCount}`);
+  assert(leftCount === rightCount, `Equal buildings on both sides (${leftCount} vs ${rightCount})`);
+}
+
+log('\n--- Test 4: No duplicate chunks at same Z ---');
+{
+  const chunkZs = scene.children.map(c => c.position.z);
+  const unique = new Set(chunkZs);
+  log(`  Total chunks: ${chunkZs.length}, Unique Z: ${unique.size}`);
+  assert(chunkZs.length === unique.size, `No duplicate chunk positions`);
+}
+
+log('\n--- Test 5: Chunks are properly spaced ---');
+{
+  const chunkZs = scene.children.map(c => c.position.z).sort((a, b) => a - b);
+  let badSpacing = 0;
+  for (let i = 1; i < chunkZs.length; i++) {
+    const gap = Math.abs(chunkZs[i] - chunkZs[i-1]);
+    if (gap !== CHUNK_SIZE) {
+      log(`  Bad spacing: ${chunkZs[i-1].toFixed(0)} to ${chunkZs[i].toFixed(0)} = ${gap.toFixed(0)}`);
+      badSpacing++;
+    }
+  }
+  assert(badSpacing === 0, `All chunks spaced by ${CHUNK_SIZE}`);
+}
+
+log('\n--- Test 6: Building count per chunk is consistent ---');
+{
+  const chunks = scene.children;
+  let inconsistent = 0;
+  chunks.forEach((chunk, i) => {
+    const buildings = chunk.children.filter(c => c instanceof THREE.Group && c.position.x !== 0);
+    if (buildings.length !== NUM_PER_SIDE * 2) {
+      log(`  Chunk ${i} at z=${chunk.position.z.toFixed(0)}: ${buildings.length} buildings (expected ${NUM_PER_SIDE * 2})`);
+      inconsistent++;
+    }
+  });
+  assert(inconsistent === 0, `All chunks have ${NUM_PER_SIDE * 2} buildings`);
+}
+
+log('\n=== Summary ===');
+log(`Passed: ${passed}/${passed + failed}`);
+if (failed > 0) log('\n⚠ SOME TESTS FAILED');
+else log('\n✓ ALL TESTS PASSED');
+</script>
+</body>
+</html>

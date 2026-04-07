@@ -4,26 +4,256 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>AvoidRain - 3D Endless Runner</title>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
   <style>
     * {
       margin: 0;
       padding: 0;
+      box-sizing: border-box;
     }
     html, body {
       width: 100%;
       height: 100%;
       overflow: hidden;
       background-color: #87CEEB;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     }
     #canvas-container {
       width: 100vw;
       height: 100vh;
       display: block;
+      position: absolute;
+      top: 0;
+      left: 0;
+      z-index: 1;
+    }
+
+    /* UI Overlay Container */
+    #ui-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 10;
+      pointer-events: none;
+    }
+
+    /* HUD Elements */
+    .hud-container {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      pointer-events: none;
+    }
+
+    /* Wet Meter */
+    .wet-meter-container {
+      background: rgba(0, 0, 0, 0.6);
+      border-radius: 8px;
+      padding: 10px 14px;
+      min-width: 200px;
+    }
+    .wet-meter-label {
+      color: #fff;
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 6px;
+      text-shadow: 0 1px 2px rgba(0,0,0,0.8);
+    }
+    .wet-meter-bar-container {
+      width: 100%;
+      height: 20px;
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: 4px;
+      overflow: hidden;
+      position: relative;
+    }
+    .wet-meter-bar {
+      height: 100%;
+      width: 0%;
+      background: #4ade80;
+      border-radius: 4px;
+      transition: width 0.1s linear, background-color 0.2s ease;
+      box-shadow: inset 0 1px 2px rgba(255,255,255,0.3);
+    }
+    .wet-meter-text {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      color: #fff;
+      font-size: 11px;
+      font-weight: 700;
+      text-shadow: 0 1px 2px rgba(0,0,0,0.8);
+    }
+
+    /* Timer and Score Container */
+    .stats-container {
+      display: flex;
+      gap: 16px;
+    }
+    .stat-box {
+      background: rgba(0, 0, 0, 0.6);
+      border-radius: 8px;
+      padding: 10px 16px;
+      min-width: 100px;
+    }
+    .stat-label {
+      color: rgba(255, 255, 255, 0.8);
+      font-size: 12px;
+      font-weight: 500;
+      margin-bottom: 4px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .stat-value {
+      color: #fff;
+      font-size: 24px;
+      font-weight: 700;
+      text-shadow: 0 2px 4px rgba(0,0,0,0.8);
+    }
+
+    /* Menu Screens */
+    .menu-screen {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      background: rgba(0, 0, 0, 0.7);
+      pointer-events: auto;
+      transition: opacity 0.3s ease;
+    }
+    .menu-content {
+      text-align: center;
+      color: #fff;
+    }
+    .menu-title {
+      font-size: 48px;
+      font-weight: 800;
+      margin-bottom: 16px;
+      text-shadow: 0 3px 6px rgba(0,0,0,0.8);
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .menu-subtitle {
+      font-size: 20px;
+      color: rgba(255, 255, 255, 0.9);
+      margin-bottom: 8px;
+    }
+    .menu-hint {
+      font-size: 16px;
+      color: rgba(255, 255, 255, 0.7);
+      margin-top: 24px;
+      animation: pulse 2s ease-in-out infinite;
+    }
+    .game-over-score {
+      font-size: 36px;
+      font-weight: 700;
+      color: #fbbf24;
+      margin: 20px 0;
+      text-shadow: 0 2px 4px rgba(0,0,0,0.8);
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 0.7; }
+      50% { opacity: 1; }
+    }
+
+    /* Responsive adjustments */
+    @media (max-width: 768px) {
+      .hud-container {
+        top: 10px;
+        left: 10px;
+        gap: 8px;
+      }
+      .wet-meter-container {
+        min-width: 150px;
+        padding: 8px 12px;
+      }
+      .wet-meter-label {
+        font-size: 12px;
+      }
+      .wet-meter-bar-container {
+        height: 16px;
+      }
+      .stat-box {
+        min-width: 80px;
+        padding: 8px 12px;
+      }
+      .stat-value {
+        font-size: 20px;
+      }
+      .menu-title {
+        font-size: 36px;
+      }
+      .menu-subtitle {
+        font-size: 16px;
+      }
     }
   </style>
+  <!-- Game Jam Widget -->
+  <script async src="https://jam.pieter.com/2026/widget.js"></script>
 </head>
 <body>
   <div id="canvas-container"></div>
+
+  <!-- UI Overlay -->
+  <div id="ui-overlay">
+    <!-- HUD -->
+    <div class="hud-container">
+      <!-- Wet Meter -->
+      <div class="wet-meter-container">
+        <div class="wet-meter-label">WETNESS</div>
+        <div class="wet-meter-bar-container">
+          <div id="wet-meter-bar" class="wet-meter-bar"></div>
+          <span id="wet-meter-text" class="wet-meter-text">0%</span>
+        </div>
+      </div>
+
+      <!-- Timer and Score -->
+      <div class="stats-container">
+        <div class="stat-box">
+          <div class="stat-label">Time</div>
+          <div id="timer" class="stat-value">00:00</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-label">Score</div>
+          <div id="score" class="stat-value">0</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Menu Screen -->
+    <div id="menu-screen" class="menu-screen">
+      <div class="menu-content">
+        <h1 class="menu-title">AVOID RAIN</h1>
+        <p class="menu-subtitle">Endless Urban Runner</p>
+        <p class="menu-hint">Press ENTER to Start</p>
+      </div>
+    </div>
+
+    <!-- Game Over Screen -->
+    <div id="game-over-screen" class="menu-screen" style="display: none;">
+      <div class="menu-content">
+        <h1 class="menu-title">GAME OVER</h1>
+        <p class="menu-subtitle">You got too wet!</p>
+        <div class="game-over-score">Score: <span id="game-over-score">0</span></div>
+        <p class="menu-hint">Press ENTER to Restart</p>
+      </div>
+    </div>
+  </div>
+
   <script type="module" src="/src/main.js"></script>
 </body>
 </html>
