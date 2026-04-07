@@ -66,11 +66,15 @@ export class BuildingBuilder {
         const frameGeo = new THREE.BoxGeometry(0.06, windowHeight + 0.08, windowWidth + 0.08);
         const windowFrame = new THREE.Mesh(frameGeo, frameMat);
         windowFrame.position.set(facadeX, y, z);
+        windowFrame.castShadow = false;  // No shadows on windows
+        windowFrame.receiveShadow = false;
         group.add(windowFrame);
 
         const glassGeo = new THREE.BoxGeometry(0.04, windowHeight, windowWidth);
         const windowGlass = new THREE.Mesh(glassGeo, windowMat);
         windowGlass.position.set(facadeX + roadDir * 0.03, y, z);
+        windowGlass.castShadow = false;  // No shadows on windows
+        windowGlass.receiveShadow = false;
         group.add(windowGlass);
       }
     }
@@ -193,7 +197,8 @@ export class BuildingBuilder {
           const underFrameGeo = new THREE.BoxGeometry(0.06, underBalconyWindowHeight + 0.08, underBalconyWindowWidth + 0.08);
           const underWindowFrame = new THREE.Mesh(underFrameGeo, frameMat);
           underWindowFrame.position.set(facadeX, underBalconyWindowY, 0);
-          underWindowFrame.castShadow = true;
+          underWindowFrame.castShadow = false;  // No shadows on windows
+          underWindowFrame.receiveShadow = false;
           group.add(underWindowFrame);
 
           const underGlassGeo = new THREE.BoxGeometry(0.04, underBalconyWindowHeight, underBalconyWindowWidth);
@@ -205,7 +210,8 @@ export class BuildingBuilder {
           });
           const underWindowGlass = new THREE.Mesh(underGlassGeo, underWindowMat);
           underWindowGlass.position.set(facadeX + roadDir * 0.03, underBalconyWindowY, 0);
-          underWindowGlass.castShadow = true;
+          underWindowGlass.castShadow = false;  // No shadows on windows
+          underWindowGlass.receiveShadow = false;
           group.add(underWindowGlass);
         }
       }

@@ -276,11 +276,23 @@ export class ChunkManager {
 
   spawnPuddlesForChunk(chunk, chunkZ) {
     const length = CHUNK_SIZE;
-    const puddleSpawnChance = 0.15;
+    const puddleSpawnChance = 0.25;  // Increased from 0.15 (more puddles)
     
-    for (let z = chunkZ - length / 2; z < chunkZ + length / 2; z += 2) {
+    for (let z = chunkZ - length / 2; z < chunkZ + length / 2; z += 3) {  // Every 3 units instead of 2
       if (Math.random() < puddleSpawnChance) {
-        const puddleX = -2 + Math.random() * 4;
+        // Spawn mostly on road, sometimes on sidewalk
+        const spawnOnRoad = Math.random() > 0.3;  // 70% on road, 30% on sidewalk
+        let puddleX;
+        
+        if (spawnOnRoad) {
+          puddleX = (Math.random() - 0.5) * 4.5;  // Road area (-2.25 to 2.25)
+        } else {
+          // Sidewalk area
+          puddleX = Math.random() > 0.5 
+            ? -roadWidth / 2 - sidewalkWidth / 2 - 0.5 + Math.random() * sidewalkWidth  // Left sidewalk
+            : roadWidth / 2 + sidewalkWidth / 2 - sidewalkWidth + Math.random() * sidewalkWidth;  // Right sidewalk
+        }
+        
         const puddle = this.puddleBuilder.build({ x: puddleX, y: 0, z: z });
         puddle.traverse((child) => {
           if (child.isMesh) {
