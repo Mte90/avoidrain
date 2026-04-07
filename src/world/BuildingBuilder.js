@@ -62,14 +62,16 @@ export class BuildingBuilder {
         const frameGeo = new THREE.BoxGeometry(0.06, windowHeight + 0.08, windowWidth + 0.08);
         const windowFrame = new THREE.Mesh(frameGeo, frameMat);
         windowFrame.position.set(facadeX, y, z);
-        windowFrame.castShadow = false;  // No shadows on windows
+        windowFrame.castShadow = false;
         windowFrame.receiveShadow = false;
         group.add(windowFrame);
 
         const glassGeo = new THREE.BoxGeometry(0.04, windowHeight, windowWidth);
-        const windowGlass = new THREE.Mesh(glassGeo, windowMat);
+        const isLit = Math.random() > 0.4;
+        const windowMatToUse = isLit ? materialCache.get('m-yellow') : materialCache.get('m-dark');
+        const windowGlass = new THREE.Mesh(glassGeo, windowMatToUse);
         windowGlass.position.set(facadeX + roadDir * 0.03, y, z);
-        windowGlass.castShadow = false;  // No shadows on windows
+        windowGlass.castShadow = false;
         windowGlass.receiveShadow = false;
         group.add(windowGlass);
       }
@@ -179,28 +181,26 @@ export class BuildingBuilder {
           group.add(post);
         }
 
-        // Top rail - sits ON TOP of posts, connected to facade
-        const railThickness = 0.05;  // Thin rail
+        const railThickness = 0.05;
         const railHeight = 0.04;
-        const railLength = balconyLength;  // Match balcony length
+        const railLength = balconyLength;
         const railGeo = new THREE.BoxGeometry(railThickness, railHeight, railLength);
         const railMat = materialCache.get('m-metal', { color: COLORS.METAL, roughness: 0.6, metalness: 0.5 });
+        
         const topRail = new THREE.Mesh(railGeo, railMat);
-        // Position: on top of posts (post top = currentBalconyY + 0.06 + railingHeight)
-        // X position: aligned with post outer edge
         topRail.position.set(balconyX + roadDir * (balconyProtrusion / 2 - 0.05), currentBalconyY + 0.06 + railingHeight + railHeight / 2, 0);
         topRail.castShadow = true;
         group.add(topRail);
         
-        // Side rails - connect posts on left and right sides of balcony
-        const sideRailGeo = new THREE.BoxGeometry(balconyProtrusion, railHeight, 0.04);
+        const sideRailGeo = new THREE.BoxGeometry(balconyProtrusion, 0.04, 0.04);
+        
         const leftSideRail = new THREE.Mesh(sideRailGeo, railMat);
-        leftSideRail.position.set(balconyX + roadDir * (balconyProtrusion / 2 - 0.05), currentBalconyY + 0.06 + railingHeight / 2, -balconyLength / 2);
+        leftSideRail.position.set(balconyX, currentBalconyY + 0.06 + railingHeight + railHeight / 2, -balconyLength / 2);
         leftSideRail.castShadow = true;
         group.add(leftSideRail);
         
         const rightSideRail = new THREE.Mesh(sideRailGeo, railMat);
-        rightSideRail.position.set(balconyX + roadDir * (balconyProtrusion / 2 - 0.05), currentBalconyY + 0.06 + railingHeight / 2, balconyLength / 2);
+        rightSideRail.position.set(balconyX, currentBalconyY + 0.06 + railingHeight + railHeight / 2, balconyLength / 2);
         rightSideRail.castShadow = true;
         group.add(rightSideRail);
 

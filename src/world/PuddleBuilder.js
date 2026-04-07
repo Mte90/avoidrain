@@ -10,20 +10,11 @@ export class PuddleBuilder {
     const radius = PUDDLE_RADIUS_MIN + Math.random() * (PUDDLE_RADIUS_MAX - PUDDLE_RADIUS_MIN);
     
     const geometry = new THREE.CircleGeometry(radius, 32);
-    
-    // Use cached material instead of creating new instances
-    const material = materialCache.get('puddle', {
-      color: 0x3a4a5a,
-      transparent: true,
-      opacity: 0.8,
-      metalness: 0.9,
-      roughness: 0.1
-      // No emissive - not needed for puddles
-    });
+    const material = materialCache.get('puddle');
     
     const puddle = new THREE.Mesh(geometry, material);
     puddle.rotation.x = -Math.PI / 2;
-    puddle.position.set(x, y, z);  // Use passed y parameter
+    puddle.position.set(x, y + 0.02, z);
     puddle.castShadow = false;
     puddle.receiveShadow = false;
     puddle.userData = { type: 'puddle' };

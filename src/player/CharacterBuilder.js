@@ -11,26 +11,16 @@ export class CharacterBuilder {
     const group = new THREE.Group();
     group.userData.hairMesh = null;
 
-    // Use fixed colors from predefined palette to limit unique materials
-    const shirtColors = [0x3498DB, 0xE74C3C, 0x2ECC71, 0x9B59B6, 0xF39C12, 0x1ABC9C];
-    const pantsColors = [0x2C3E50, 0x34495E, 0x1A252F, 0x243447];
-    const shirtColor = shirtColors[Math.floor(Math.random() * shirtColors.length)];
-    const pantsColor = pantsColors[Math.floor(Math.random() * pantsColors.length)];
+    const shirtKeys = ['shirt-blue', 'shirt_red', 'shirt_green', 'shirt_purple', 'shirt_orange', 'shirt_teal'];
+    const pantsKeys = ['pants_dark', 'pants_gray', 'pants_darker', 'pants_bluegray'];
+    const shirtKey = shirtKeys[Math.floor(Math.random() * shirtKeys.length)];
+    const pantsKey = pantsKeys[Math.floor(Math.random() * pantsKeys.length)];
     
-    // Cache materials by exact color + roughness + metalness to reuse across characters
-    const shirtMat = materialCache.get('m-blue', {
-      color: shirtColor,
-      roughness: 0.7,
-      metalness: 0.1
-    });
-    const pantsMat = materialCache.get('m-dark', {
-      color: pantsColor,
-      roughness: 0.85,
-      metalness: 0.05
-    });
-    const skinMat = materialCache.get('m-light', { color: 0xFFDAB9, roughness: 0.8 });
-    const shoeMat = materialCache.get('m-black', { color: 0x1A1A1A, roughness: 0.6, metalness: 0.2 });
-    const hairMat = materialCache.get('m-gray', { color: 0x4A3728, roughness: 0.9, metalness: 0.0 });
+    const shirtMat = materialCache.get(shirtKey);
+    const pantsMat = materialCache.get(pantsKey);
+    const skinMat = materialCache.get('skin');
+    const shoeMat = materialCache.get('shoes');
+    const hairMat = materialCache.get('hair');
 
     const hipY = 0.9; // Legs hang down from here, feet at Y=0
     const torsoHeight = 0.7;
@@ -55,26 +45,6 @@ export class CharacterBuilder {
     hair.position.y = hipY + torsoHeight + headSize - 0.05;
     hair.rotation.x = 0.1;
     group.add(hair);
-
-    const eyeGeo = new THREE.SphereGeometry(0.04, 8, 8);
-    const eyeMat = materialCache.get('m-white', { color: 0xFFFFFF, roughness: 0.3 });
-    const leftEye = new THREE.Mesh(eyeGeo, eyeMat);
-    leftEye.position.set(-0.1, hipY + torsoHeight + headSize * 0.8, headSize * 0.85);
-    group.add(leftEye);
-
-    const rightEye = new THREE.Mesh(eyeGeo, eyeMat);
-    rightEye.position.set(0.1, hipY + torsoHeight + headSize * 0.8, headSize * 0.85);
-    group.add(rightEye);
-
-    const pupilGeo = new THREE.SphereGeometry(0.02, 8, 8);
-    const pupilMat = materialCache.get('m-black', { color: 0x000000, roughness: 0.3 });
-    const leftPupil = new THREE.Mesh(pupilGeo, pupilMat);
-    leftPupil.position.set(-0.1, hipY + torsoHeight + headSize * 0.8, headSize * 0.92);
-    group.add(leftPupil);
-
-    const rightPupil = new THREE.Mesh(pupilGeo, pupilMat);
-    rightPupil.position.set(0.1, hipY + torsoHeight + headSize * 0.8, headSize * 0.92);
-    group.add(rightPupil);
 
     const armLength = 0.65;
     const armRadius = 0.1;

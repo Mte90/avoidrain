@@ -22,28 +22,14 @@ export class CarBuilder {
 
     const color = CAR_COLORS[colorIndex >= 0 ? colorIndex : Math.floor(Math.random() * CAR_COLORS.length)];
     
-    const bodyMat = materialCache.get('m-gray', {
-      color: color,
-      roughness: 0.2,
-      metalness: 0.7
-    });
-    const cabinMat = materialCache.get('m-dark', { color: 0x2C3E50, roughness: 0.1, metalness: 0.3 });
-    const wheelMat = materialCache.get('m-black', {
-      color: 0x1A1A1A,
-      roughness: 0.9,
-      metalness: 0.1
-    });
-    const headlightMat = materialCache.get('m-yellow', { color: 0xFFE4B5, roughness: 0.5 });  // No emissive
-    const taillightMat = materialCache.get('m-red', { 
-      color: 0x8B0000,  // Dark red, no emissive
-      roughness: 0.3,
-      metalness: 0.3
-    });
-    const bumperMat = materialCache.get('m-metal', { 
-      color: 0x1A1A1A,
-      roughness: 0.5,
-      metalness: 0.3
-    });
+    const bodyMat = materialCache.get('m-car-body');
+    const cabinMat = materialCache.get('m-dark');
+    const wheelMat = materialCache.get('m-black');
+    const headlightMat = materialCache.get('m-emissive-yellow');
+    const taillightMat = materialCache.get('m-emissive-red');
+    const bumperMat = materialCache.get('m-car-bumper');
+    const rimMat = materialCache.get('m-car-rim');
+    const mirrorMat = materialCache.get('m-car-mirror');
 
     // Main body - more realistic car proportions
     const bodyLength = 4.0;
@@ -85,14 +71,8 @@ export class CarBuilder {
       wheel.castShadow = true;
       group.add(wheel);
 
-      // Wheel rim detail
       const rimGeo = new THREE.CylinderGeometry(wheelRadius * 0.5, wheelRadius * 0.5, wheelWidth + 0.02, 8);
       rimGeo.rotateZ(Math.PI / 2);
-      const rimMat = materialCache.get('m-metal', { 
-        color: 0xC0C0C0,
-        roughness: 0.3,
-        metalness: 0.8
-      });
       const rim = new THREE.Mesh(rimGeo, rimMat);
       rim.position.set(pos.x, pos.y, pos.z);
       group.add(rim);
@@ -110,7 +90,7 @@ export class CarBuilder {
 
     // Headlight housings
     const housingGeo = new THREE.BoxGeometry(0.35, 0.25, 0.2);
-    const housingMat = materialCache.get('m-black', { color: 0x000000, roughness: 0.8 });
+    const housingMat = materialCache.get('m-black');
     const leftHousing = new THREE.Mesh(housingGeo, housingMat);
     leftHousing.position.set(-1.6, 0.4, 0.5);
     group.add(leftHousing);
@@ -144,11 +124,6 @@ export class CarBuilder {
 
     // Side mirrors
     const mirrorGeo = new THREE.BoxGeometry(0.15, 0.15, 0.25);
-    const mirrorMat = materialCache.get(`m-metal`, { 
-      color: color,
-      roughness: 0.2,
-      metalness: 0.7
-    });
     
     const leftMirror = new THREE.Mesh(mirrorGeo, mirrorMat);
     leftMirror.position.set(-1.2, 0.95, 0.75);

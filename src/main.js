@@ -35,7 +35,6 @@ export class Game {
     this.renderer.setSize(window.innerWidth, window.innerHeight);
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     this.renderer.shadowMap.enabled = false;
-    this.renderer.autoClear = true;
     document.getElementById('canvas-container').appendChild(this.renderer.domElement);
 
     this.ambientLight = new THREE.AmbientLight(0xffffff, 0.55);

@@ -16,8 +16,7 @@ export class MaterialCache {
       ['m-white', 0xFFFFFF, 0.9, 0.02],
       ['m-blue', 0x3498DB, 0.5, 0.3],
       ['m-metal', 0xC0C0C0, 0.3, 0.8],
-      // Window materials
-      ['m-yellow', 0xFFE4B5, 0.5, 0.0],
+      ['m-yellow', 0xFFFF99, 0.3, 0.0, 0xFFFF00, 0.8],
       ['m-red', 0x8B0000, 0.3, 0.3],
       ['m-purple', 0x667eea, 0.2, 0.8],
       // Car materials
@@ -62,7 +61,7 @@ export class MaterialCache {
       ['shoes', 0x1A1A1A, 0.6, 0.2],
       ['m-eye', 0xFFFFFF, 0.3, 0.0],
       ['m-pupil', 0x000000, 0.9, 0.0],
-      ['puddle', 0x3a4a5a, 0.1, 0.9],
+      ['puddle', 0x5a6a7a, 0.05, 0.95],
       ['m-portal', 0x9333EA, 0.4, 0.8],
       // Emissive materials (essential lights only)
       ['m-emissive-yellow', 0xFFFF00, 1.0, 0.0, 0x887700, 0.5],
