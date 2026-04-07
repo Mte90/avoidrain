@@ -34,8 +34,8 @@ export class Game {
     this.renderer = new THREE.WebGLRenderer({ antialias: true });
     this.renderer.setSize(window.innerWidth, window.innerHeight);
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-    this.renderer.shadowMap.enabled = true;
-    this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    this.renderer.shadowMap.enabled = false;
+    this.renderer.autoClear = true;
     document.getElementById('canvas-container').appendChild(this.renderer.domElement);
 
     this.ambientLight = new THREE.AmbientLight(0xffffff, 0.55);
@@ -169,6 +169,10 @@ export class Game {
     this.chunkManager = new ChunkManager(this.scene);
     this.chunkManager.setDifficultyManager(this.difficultyManager);
     this.chunkManager.resize({ x: 0, y: 0, z: 0 });
+    
+    // resize() already spawns chunks from z=-120 to z=120 (7 chunks)
+    // Buildings will be visible at various Z positions within this range
+    
     const playerPos = this.player.getPosition();
     this.rainSystem.setPlayerPosition(playerPos.x, playerPos.y, playerPos.z);
   }

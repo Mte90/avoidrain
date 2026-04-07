@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { materialCache } from '../utils/MaterialCache.js';
 import { BuildingBuilder } from './BuildingBuilder.js';
 import { CarBuilder } from './CarBuilder.js';
 import { GroundBuilder } from './GroundBuilder.js';
@@ -35,10 +36,28 @@ export class ChunkManager {
     
     this.puddleBuilder = new PuddleBuilder();
     this.lastGeneratedChunkZ = 0;
+    
+    // Create global ground immediately in constructor
+    this.createGlobalGround();
   }
 
   setDifficultyManager(difficultyManager) {
     this.difficultyManager = difficultyManager;
+  }
+
+  createGlobalGround() {
+    // Dark ground plane under everything (y=-0.5)
+    const groundGeo = new THREE.PlaneGeometry(2000, 2000);
+    const groundMat = materialCache.get('m-gray', {
+      color: 0x3a3a3a,  // Lighter gray for visibility
+      roughness: 0.95,
+      metalness: 0.02
+    });
+    this.globalGround = new THREE.Mesh(groundGeo, groundMat);
+    this.globalGround.rotation.x = -Math.PI / 2;
+    this.globalGround.position.set(0, -0.5, 0);
+    this.globalGround.receiveShadow = true;
+    this.scene.add(this.globalGround);
   }
 
   initialize(scene) {
@@ -60,6 +79,8 @@ export class ChunkManager {
     this.carPool = [];
     this.buildingPositions = [];
     this.puddles = [];
+    
+    this.createGlobalGround();
   }
 
   resize(position = { x: 0, y: 0, z: 0 }) {
@@ -68,10 +89,14 @@ export class ChunkManager {
     const endZ = position.z + this.chunkAheadDistance;
     this.currentChunkZ = this.getChunkStart(position.z - this.chunkAheadDistance);
     
+    console.log('[ChunkManager] resize called: playerZ=', position.z, 'currentChunkZ=', this.currentChunkZ, 'endZ=', endZ);
+    
     while (this.currentChunkZ <= endZ) {
+      console.log('[ChunkManager] Spawning chunk at Z=', this.currentChunkZ);
       this.spawnChunk(this.currentChunkZ);
       this.currentChunkZ += CHUNK_SIZE;
     }
+    console.log('[ChunkManager] Done spawning chunks. Active chunks:', this.activeChunks.length);
   }
 
   getChunkStart(z) {
@@ -126,6 +151,8 @@ export class ChunkManager {
     const chunkWorldZ = chunkZ;
     const buildingsInThisChunk = [];
     
+    console.log('[ChunkManager] createChunk Z=', chunkZ, 'creating', numBuildings, 'buildings');
+    
     for (let b = 0; b < numBuildings; b++) {
       const bz = -CHUNK_SIZE / 2 + buildingSpacing / 2 + b * buildingSpacing;
       const leftHeight = 5 + Math.random() * 3;
@@ -159,6 +186,7 @@ export class ChunkManager {
           }
         });
         chunk.add(leftBuilding);
+        console.log('[ChunkManager] Added LEFT building at x=-6.5, z=', bz, 'height=', leftHeight);
         this.buildingPositions.push({ side: 'left', minZ: leftMinZ, maxZ: leftMaxZ, chunkZ });
         buildingsInThisChunk.push({ side: 'left', minZ: leftMinZ, maxZ: leftMaxZ });
       }
@@ -194,10 +222,13 @@ export class ChunkManager {
           }
         });
         chunk.add(rightBuilding);
+        console.log('[ChunkManager] Added RIGHT building at x=6.5, z=', bz, 'height=', rightHeight);
         this.buildingPositions.push({ side: 'right', minZ: rightMinZ, maxZ: rightMaxZ, chunkZ });
         buildingsInThisChunk.push({ side: 'right', minZ: rightMinZ, maxZ: rightMaxZ });
       }
     }
+    
+    console.log('[ChunkManager] Chunk Z=', chunkZ, 'has', buildingsInThisChunk.length, 'buildings');
     
     chunk.userData.buildings = buildingsInThisChunk;
 
@@ -211,15 +242,14 @@ export class ChunkManager {
       2.5,
       backdropHeight,
       backdropDepth,
-      false,  // No balconies on backdrop
+      false,
       'left'
     );
-    // Make more transparent for distance effect (opaqueness was 1 - previous 0.4)
     backdropLeft.traverse((child) => {
       if (child.isMesh && child.material) {
-        child.material.opacity = 0.25 * child.material.opacity;  // More transparent
-        child.material.transparent = true;
-        child.material.color.multiplyScalar(0.35);  // Darker for distance
+        child.material.opacity = 1.0;
+        child.material.transparent = false;
+        child.material.color.setHex(0x2a2a2a);
         child.castShadow = false;
         child.receiveShadow = false;
       }
@@ -232,15 +262,14 @@ export class ChunkManager {
       2.5,
       backdropHeight,
       backdropDepth,
-      false,  // No balconies on backdrop
+      false,
       'right'
     );
-    // Make more transparent for distance effect
     backdropRight.traverse((child) => {
       if (child.isMesh && child.material) {
-        child.material.opacity = 0.25 * child.material.opacity;  // More transparent
-        child.material.transparent = true;
-        child.material.color.multiplyScalar(0.35);  // Darker for distance
+        child.material.opacity = 1.0;
+        child.material.transparent = false;
+        child.material.color.setHex(0x2a2a2a);
         child.castShadow = false;
         child.receiveShadow = false;
       }

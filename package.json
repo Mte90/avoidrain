@@ -4,7 +4,7 @@
   "description": "3D endless runner game - avoid rain, stay under balconies",
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "dev": "serve -p 5173",
     "build": "vite build",
     "test": "playwright test",
     "test:ui": "playwright test --ui"
@@ -16,6 +16,7 @@
   "devDependencies": {
     "@playwright/test": "^1.59.1",
     "playwright": "^1.59.1",
+    "serve": "^14.2.6",
     "vite": "^5.4.0"
   }
 }

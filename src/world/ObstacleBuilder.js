@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { materialCache } from '../utils/MaterialCache.js';
 
 const TRASH_CAN_COLORS = [0x2E8B57, 0x8B7A34, 0x5D4037, 0x455A64];  // Green, gold, brown, slate
 const BENCH_BACK_COLORS = [0x8B4513, 0xA0522D, 0xCD853F, 0xDEB887];  // Various wood tones
@@ -16,7 +17,7 @@ export class ObstacleBuilder {
     const group = new THREE.Group();
     
     const canColor = TRASH_CAN_COLORS[Math.floor(Math.random() * TRASH_CAN_COLORS.length)];
-    const canMat = new THREE.MeshStandardMaterial({ 
+    const canMat = materialCache.get(`trash-can-${canColor}-0.4-0.3`, { 
       color: canColor, 
       roughness: 0.4, 
       metalness: 0.3 
@@ -49,7 +50,7 @@ export class ObstacleBuilder {
     // Lid
     const lidRadius = bodyRadius * 1.1;
     const lidGeo = new THREE.CylinderGeometry(lidRadius, lidRadius, 0.1, 16);
-    const lidMat = new THREE.MeshStandardMaterial({ 
+    const lidMat = materialCache.get('trash-lid-0x111111-0.9-0.0', { 
       color: 0x111111,  // Darker lid
       roughness: 0.9 
     });
@@ -71,13 +72,13 @@ export class ObstacleBuilder {
     const group = new THREE.Group();
     
     const woodColor = BENCH_BACK_COLORS[Math.floor(Math.random() * BENCH_BACK_COLORS.length)];
-    const woodMat = new THREE.MeshStandardMaterial({ 
+    const woodMat = materialCache.get(`bench-wood-${woodColor}-0.9-0.1`, { 
       color: woodColor, 
       roughness: 0.9, 
       metalness: 0.1 
     });
     const metalColor = 0x333333;
-    const metalMat = new THREE.MeshStandardMaterial({ 
+    const metalMat = materialCache.get(`bench-metal-${metalColor}-0.6-0.7`, { 
       color: metalColor, 
       roughness: 0.6, 
       metalness: 0.7 
@@ -162,13 +163,13 @@ export class ObstacleBuilder {
     const group = new THREE.Group();
     
     const signColor = SIGN_SIGNS[Math.floor(Math.random() * SIGN_SIGNS.length)];
-    const signMat = new THREE.MeshStandardMaterial({ 
+    const signMat = materialCache.get(`sign-${signColor}-0.3-0.2`, { 
       color: signColor, 
       roughness: 0.3, 
       metalness: 0.2 
     });
     const poleColor = 0x2a2a2a;
-    const poleMat = new THREE.MeshStandardMaterial({ 
+    const poleMat = materialCache.get(`sign-pole-${poleColor}-0.8-0.5`, { 
       color: poleColor, 
       roughness: 0.8, 
       metalness: 0.5 
@@ -187,7 +188,7 @@ export class ObstacleBuilder {
     const baseSize = 0.4;
     const baseHeight = 0.1;
     const baseGeo = new THREE.BoxGeometry(baseSize, baseHeight, baseSize);
-    const baseMat = new THREE.MeshStandardMaterial({ color: 0x1a1a1a });
+    const baseMat = materialCache.get('m-black', { color: 0x1a1a1a });
     const base = new THREE.Mesh(baseGeo, baseMat);
     base.position.y = baseHeight / 2;
     base.receiveShadow = true;
@@ -206,7 +207,7 @@ export class ObstacleBuilder {
     // Optional: Add a simple "symbol" on the sign (circle)
     const symbolRadius = 0.18;
     const symbolGeo = new THREE.CircleGeometry(symbolRadius, 16);
-    const symbolMat = new THREE.MeshStandardMaterial({ color: 0xFFFFFF, side: THREE.DoubleSide });
+    const symbolMat = materialCache.get('sign-symbol-0xFFFFFF-0.5-0.0', { color: 0xFFFFFF, side: THREE.DoubleSide });
     const symbol = new THREE.Mesh(symbolGeo, symbolMat);
     symbol.position.set(0, poleHeight + signHeight / 2, signThickness / 2 + 0.01);
     symbol.rotation.x = -Math.PI / 2;

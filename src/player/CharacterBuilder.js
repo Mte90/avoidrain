@@ -1,42 +1,36 @@
 import * as THREE from 'three';
+import { materialCache } from '../utils/MaterialCache.js';
 
 export class CharacterBuilder {
   constructor() {
     // Materials are created per-build() to avoid shared color mutation
+    // But we cache by color to reduce unique material count
   }
 
   build(position = { x: 0, y: 0, z: 0 }) {
     const group = new THREE.Group();
-    // Store hair mesh reference for wetness effect
     group.userData.hairMesh = null;
 
+    // Use fixed colors from predefined palette to limit unique materials
     const shirtColors = [0x3498DB, 0xE74C3C, 0x2ECC71, 0x9B59B6, 0xF39C12, 0x1ABC9C];
     const pantsColors = [0x2C3E50, 0x34495E, 0x1A252F, 0x243447];
+    const shirtColor = shirtColors[Math.floor(Math.random() * shirtColors.length)];
+    const pantsColor = pantsColors[Math.floor(Math.random() * pantsColors.length)];
     
-    const shirtMat = new THREE.MeshStandardMaterial({ 
-      color: shirtColors[Math.floor(Math.random() * shirtColors.length)],
+    // Cache materials by exact color + roughness + metalness to reuse across characters
+    const shirtMat = materialCache.get('m-blue', {
+      color: shirtColor,
       roughness: 0.7,
       metalness: 0.1
     });
-    const pantsMat = new THREE.MeshStandardMaterial({ 
-      color: pantsColors[Math.floor(Math.random() * pantsColors.length)],
+    const pantsMat = materialCache.get('m-dark', {
+      color: pantsColor,
       roughness: 0.85,
       metalness: 0.05
     });
-    const skinMat = new THREE.MeshStandardMaterial({ 
-      color: 0xFFDAB9,
-      roughness: 0.8
-    });
-    const shoeMat = new THREE.MeshStandardMaterial({ 
-      color: 0x1A1A1A,
-      roughness: 0.6,
-      metalness: 0.2
-    });
-    const hairMat = new THREE.MeshStandardMaterial({ 
-      color: 0x4A3728,
-      roughness: 0.9,
-      metalness: 0.0
-    });
+    const skinMat = materialCache.get('m-light', { color: 0xFFDAB9, roughness: 0.8 });
+    const shoeMat = materialCache.get('m-black', { color: 0x1A1A1A, roughness: 0.6, metalness: 0.2 });
+    const hairMat = materialCache.get('m-gray', { color: 0x4A3728, roughness: 0.9, metalness: 0.0 });
 
     const hipY = 0.9; // Legs hang down from here, feet at Y=0
     const torsoHeight = 0.7;
@@ -63,7 +57,7 @@ export class CharacterBuilder {
     group.add(hair);
 
     const eyeGeo = new THREE.SphereGeometry(0.04, 8, 8);
-    const eyeMat = new THREE.MeshStandardMaterial({ color: 0xFFFFFF, roughness: 0.3 });
+    const eyeMat = materialCache.get('m-white', { color: 0xFFFFFF, roughness: 0.3 });
     const leftEye = new THREE.Mesh(eyeGeo, eyeMat);
     leftEye.position.set(-0.1, hipY + torsoHeight + headSize * 0.8, headSize * 0.85);
     group.add(leftEye);
@@ -73,7 +67,7 @@ export class CharacterBuilder {
     group.add(rightEye);
 
     const pupilGeo = new THREE.SphereGeometry(0.02, 8, 8);
-    const pupilMat = new THREE.MeshStandardMaterial({ color: 0x000000, roughness: 0.3 });
+    const pupilMat = materialCache.get('m-black', { color: 0x000000, roughness: 0.3 });
     const leftPupil = new THREE.Mesh(pupilGeo, pupilMat);
     leftPupil.position.set(-0.1, hipY + torsoHeight + headSize * 0.8, headSize * 0.92);
     group.add(leftPupil);

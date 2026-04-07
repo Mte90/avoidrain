@@ -29,11 +29,16 @@ export class BackdropBuilder {
   }
 
   _createBuilding(x, height, width, depth) {
-    const material = new THREE.MeshBasicMaterial({ color: 0x1a1a1a });
+    const material = new THREE.MeshStandardMaterial({ 
+      color: 0x3a3a3a, 
+      roughness: 0.8, 
+      metalness: 0.1,
+      opacity: 1.0
+    });
     const geometry = new THREE.BoxGeometry(width, height, depth);
     const building = new THREE.Mesh(geometry, material);
 
-    building.position.set(x, height / 2, 0);
+    building.position.set(x, height * 0.6, 0);
     building.castShadow = false;
     building.receiveShadow = false;
 

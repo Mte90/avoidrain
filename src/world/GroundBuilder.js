@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { materialCache } from '../utils/MaterialCache.js';
 
 const SIDING_COLORS = [0x959595, 0xA5A5A5, 0x8A8A8A, 0x9A9A9A];
 const ROAD_COLOR = 0x2C2C2C;
@@ -7,25 +8,23 @@ const CURB_COLORS = [0x666666, 0x777777, 0x6A6A6A];
 
 export class GroundBuilder {
   constructor() {
-    this.baseSidewalkRoughness = 0.95;
-    this.baseRoadRoughness = 0.85;
-    
-    this.sidingMat = new THREE.MeshStandardMaterial({ 
+    // Use cached materials - colors mutated per-build
+    this.sidingMat = materialCache.get('m-light', {
       color: SIDING_COLORS[0],
-      roughness: this.baseSidewalkRoughness,
+      roughness: 0.95,
       metalness: 0.02
     });
-    this.roadMat = new THREE.MeshStandardMaterial({ 
+    this.roadMat = materialCache.get('m-dark', {
       color: ROAD_COLOR,
-      roughness: this.baseRoadRoughness,
+      roughness: 0.85,
       metalness: 0.05
     });
-    this.lineMat = new THREE.MeshStandardMaterial({ 
+    this.lineMat = materialCache.get('m-white', {
       color: LINE_COLOR,
       roughness: 0.9,
       metalness: 0.02
     });
-    this.curbMat = new THREE.MeshStandardMaterial({ 
+    this.curbMat = materialCache.get('m-gray', {
       color: CURB_COLORS[0],
       roughness: 0.9,
       metalness: 0.05
@@ -41,12 +40,12 @@ export class GroundBuilder {
     const curbColor = CURB_COLORS[Math.floor(Math.random() * CURB_COLORS.length)];
     this.curbMat.color.setHex(curbColor);
 
-    // Raise everything by 0.5m so road is clearly visible
-    const groundY = 0.5;
+    const roadY = 0;
+    const sidewalkY = 0;
 
-    const leftSidewalkGeo = new THREE.BoxGeometry(sidewalkWidth, 0.12, length);
+    const leftSidewalkGeo = new THREE.BoxGeometry(sidewalkWidth, 0.15, length);
     const leftSidewalk = new THREE.Mesh(leftSidewalkGeo, this.sidingMat);
-    leftSidewalk.position.set(-roadWidth / 2 - sidewalkWidth / 2, groundY + 0.02, 0);
+    leftSidewalk.position.set(-roadWidth / 2 - sidewalkWidth / 2, sidewalkY + 0.075, 0);
     leftSidewalk.receiveShadow = true;
     group.add(leftSidewalk);
 
@@ -54,25 +53,25 @@ export class GroundBuilder {
     const curbDepth = 0.15;
     const leftCurbGeo = new THREE.BoxGeometry(curbDepth, curbHeight, length);
     const leftCurb = new THREE.Mesh(leftCurbGeo, this.curbMat);
-    leftCurb.position.set(-roadWidth / 2 - sidewalkWidth + curbDepth / 2, curbHeight / 2, 0);
+    leftCurb.position.set(-roadWidth / 2, curbHeight / 2, 0);
     leftCurb.receiveShadow = true;
     group.add(leftCurb);
 
-    const rightSidewalkGeo = new THREE.BoxGeometry(sidewalkWidth, 0.12, length);
+    const rightSidewalkGeo = new THREE.BoxGeometry(sidewalkWidth, 0.15, length);
     const rightSidewalk = new THREE.Mesh(rightSidewalkGeo, this.sidingMat);
-    rightSidewalk.position.set(roadWidth / 2 + sidewalkWidth / 2, 0.02, 0);
+    rightSidewalk.position.set(roadWidth / 2 + sidewalkWidth / 2, sidewalkY + 0.075, 0);
     rightSidewalk.receiveShadow = true;
     group.add(rightSidewalk);
 
     const rightCurbGeo = new THREE.BoxGeometry(curbDepth, curbHeight, length);
     const rightCurb = new THREE.Mesh(rightCurbGeo, this.curbMat);
-    rightCurb.position.set(roadWidth / 2 + sidewalkWidth - curbDepth / 2, curbHeight / 2, 0);
+    rightCurb.position.set(roadWidth / 2, curbHeight / 2, 0);
     rightCurb.receiveShadow = true;
     group.add(rightCurb);
 
-    const roadGeo = new THREE.BoxGeometry(roadWidth, 0.1, length);
+    const roadGeo = new THREE.BoxGeometry(roadWidth, 0.15, length);
     const road = new THREE.Mesh(roadGeo, this.roadMat);
-    road.position.set(0, 0, 0);
+    road.position.set(0, roadY + 0.075, 0);
     road.receiveShadow = true;
     group.add(road);
 
@@ -86,8 +85,7 @@ export class GroundBuilder {
     while (zPosition > -length / 2) {
       const lineGeo = new THREE.BoxGeometry(lineThickness, lineThickness, segmentLength);
       const laneLine = new THREE.Mesh(lineGeo, this.lineMat);
-      laneLine.position.set(0, 0.06, -zPosition);
-      group.add(laneLine);
+        laneLine.position.set(0, 0.16, -zPosition);  // Above road surface (y=0.15)      group.add(laneLine);
       zPosition -= (segmentLength + gapLength);
     }
 
@@ -96,11 +94,11 @@ export class GroundBuilder {
     const edgeLineGeo = new THREE.BoxGeometry(edgeLineThickness, 0.05, length);
     
     const leftEdgeLine = new THREE.Mesh(edgeLineGeo, this.lineMat);
-    leftEdgeLine.position.set(-roadWidth / 2 + 0.15, 0.06, 0);
+    leftEdgeLine.position.set(-roadWidth / 2 + 0.15, 0.16, 0);  // Above road surface
     group.add(leftEdgeLine);
 
     const rightEdgeLine = new THREE.Mesh(edgeLineGeo, this.lineMat);
-    rightEdgeLine.position.set(roadWidth / 2 - 0.15, 0.06, 0);
+    rightEdgeLine.position.set(roadWidth / 2 - 0.15, 0.16, 0);  // Above road surface
     group.add(rightEdgeLine);
 
     // Crosswalk stripes (6 stripes, 0.4w x 2.0l, every ~80 units based on chunk Z)
@@ -119,7 +117,7 @@ export class GroundBuilder {
       if (crosswalkZ >= -length / 2 && crosswalkZ <= length / 2) {
         const crosswalkGeo = new THREE.BoxGeometry(crosswalkWidth, 0.08, crosswalkLength);
         const crosswalk = new THREE.Mesh(crosswalkGeo, this.lineMat);
-        crosswalk.position.set(0, 0.06, crosswalkZ);
+        crosswalk.position.set(0, 0.16, crosswalkZ);  // Above road surface
         group.add(crosswalk);
       }
     }
@@ -135,11 +133,7 @@ export class GroundBuilder {
       const manholeZ = (Math.random() - 0.5) * length;
       
       const manholeGeo = new THREE.CircleGeometry(manholeRadius, 16);
-      const manholeMat = new THREE.MeshStandardMaterial({ 
-        color: 0x1a1a1a,
-        roughness: 0.95,
-        metalness: 0.05
-      });
+      const manholeMat = materialCache.get('m-gray', { color: 0x3a3a3a, roughness: 0.95, metalness: 0.05 });
       const manhole = new THREE.Mesh(manholeGeo, manholeMat);
       manhole.rotation.x = -Math.PI / 2;
       manhole.position.set(manholeX, 0.06, manholeZ);
@@ -154,7 +148,7 @@ export class GroundBuilder {
       // Small cracks/imperfections on sidewalk (very subtle)
       if (Math.random() > 0.7) {
         const crackGeo = new THREE.BoxGeometry(0.3, 0.01, 0.05);
-        const crackMat = new THREE.MeshStandardMaterial({ color: 0x1A1A1A, roughness: 1.0 });
+        const crackMat = materialCache.get('m-black', { color: 0x1A1A1A, roughness: 1.0 });
         const crack = new THREE.Mesh(crackGeo, crackMat);
         crack.position.set(
           (Math.random() > 0.5 ? -roadWidth / 2 - sidewalkWidth / 2 : roadWidth / 2 + sidewalkWidth / 2) + 

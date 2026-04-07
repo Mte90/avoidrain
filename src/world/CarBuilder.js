@@ -1,4 +1,12 @@
 import * as THREE from 'three';
+import { materialCache } from '../utils/MaterialCache.js';
+
+// Shared materials - must match BuildingBuilder COLORS
+const COLORS = {
+  GRAY: 0x7A8B99, DARK_GRAY: 0x3a3a3a, LIGHT_GRAY: 0x555555,
+  WHITE: 0xFFFFFF, BLACK: 0x1a1a1a, RED: 0xFF0000,
+  BLUE: 0x3498DB, YELLOW: 0xFFFFCC, METAL: 0xC0C0C0
+};
 
 const CAR_COLORS = [
   0xC0392B, 0x2980B9, 0x27AE60, 0xF39C12, 0xECF0F1, 
@@ -7,42 +15,31 @@ const CAR_COLORS = [
 ];
 
 export class CarBuilder {
-  constructor() {
-  }
+  constructor() {}
 
   build(position = { x: 0, y: 0, z: 0 }, colorIndex = -1) {
     const group = new THREE.Group();
 
     const color = CAR_COLORS[colorIndex >= 0 ? colorIndex : Math.floor(Math.random() * CAR_COLORS.length)];
     
-    const bodyMat = new THREE.MeshStandardMaterial({ 
+    const bodyMat = materialCache.get('m-gray', {
       color: color,
       roughness: 0.2,
       metalness: 0.7
     });
-    const cabinMat = new THREE.MeshStandardMaterial({ 
-      color: 0x2C3E50,
-      roughness: 0.1,
-      metalness: 0.3,
-      transparent: true,
-      opacity: 0.85
-    });
-    const wheelMat = new THREE.MeshStandardMaterial({ 
+    const cabinMat = materialCache.get('m-dark', { color: 0x2C3E50, roughness: 0.1, metalness: 0.3 });
+    const wheelMat = materialCache.get('m-black', {
       color: 0x1A1A1A,
       roughness: 0.9,
       metalness: 0.1
     });
-    const headlightMat = new THREE.MeshStandardMaterial({ 
-      color: 0xFFFFE0,
-      emissive: 0xFFFFAA,
-      emissiveIntensity: 0.5
+    const headlightMat = materialCache.get('m-yellow', { color: 0xFFE4B5, roughness: 0.5 });  // No emissive
+    const taillightMat = materialCache.get('m-red', { 
+      color: 0x8B0000,  // Dark red, no emissive
+      roughness: 0.3,
+      metalness: 0.3
     });
-    const taillightMat = new THREE.MeshStandardMaterial({ 
-      color: 0x8B0000,
-      emissive: 0xFF0000,
-      emissiveIntensity: 0.4
-    });
-    const bumperMat = new THREE.MeshStandardMaterial({ 
+    const bumperMat = materialCache.get('m-metal', { 
       color: 0x1A1A1A,
       roughness: 0.5,
       metalness: 0.3
@@ -91,7 +88,7 @@ export class CarBuilder {
       // Wheel rim detail
       const rimGeo = new THREE.CylinderGeometry(wheelRadius * 0.5, wheelRadius * 0.5, wheelWidth + 0.02, 8);
       rimGeo.rotateZ(Math.PI / 2);
-      const rimMat = new THREE.MeshStandardMaterial({ 
+      const rimMat = materialCache.get('m-metal', { 
         color: 0xC0C0C0,
         roughness: 0.3,
         metalness: 0.8
@@ -113,7 +110,7 @@ export class CarBuilder {
 
     // Headlight housings
     const housingGeo = new THREE.BoxGeometry(0.35, 0.25, 0.2);
-    const housingMat = new THREE.MeshStandardMaterial({ color: 0x000000, roughness: 0.8 });
+    const housingMat = materialCache.get('m-black', { color: 0x000000, roughness: 0.8 });
     const leftHousing = new THREE.Mesh(housingGeo, housingMat);
     leftHousing.position.set(-1.6, 0.4, 0.5);
     group.add(leftHousing);
@@ -147,7 +144,7 @@ export class CarBuilder {
 
     // Side mirrors
     const mirrorGeo = new THREE.BoxGeometry(0.15, 0.15, 0.25);
-    const mirrorMat = new THREE.MeshStandardMaterial({ 
+    const mirrorMat = materialCache.get(`m-metal`, { 
       color: color,
       roughness: 0.2,
       metalness: 0.7

@@ -1,13 +1,18 @@
 import * as THREE from 'three';
+import { materialCache } from '../utils/MaterialCache.js';
 
-const BUILDING_COLORS = [
-  0x6B7A8F, 0x7A8B99, 0x8B9BA8, 0x5A6A78, 0x7A8A9A,
-  0x8B7B6B, 0x9B8B7B, 0x7B6B5B, 0x6B5B4B, 0x8B7B6B,
-  0x5D6B7A, 0x6B7B8B, 0x4A5A6A
-];
-const WINDOW_FRAME_COLORS = [0x2C3E50, 0x34495E, 0x4A5A6A, 0x5A6A7A];
-const WINDOW_LIGHT_COLORS = [0xFFFFCC, 0xFFE4B5, 0xE6E6FA, 0xB0E0E6];
-const ACCENT_COLORS = [0xE74C3C, 0x3498DB, 0xF39C12, 0x9B59B6, 0x1ABC9C];
+// Shared materials - MAX 15 for WebGL shader compatibility
+const COLORS = {
+  GRAY: 0x7A8B99,
+  DARK_GRAY: 0x3a3a3a,
+  LIGHT_GRAY: 0x555555,
+  WHITE: 0xFFFFFF,
+  BLACK: 0x1a1a1a,
+  RED: 0xFF0000,
+  BLUE: 0x3498DB,
+  YELLOW: 0xFFFFCC,
+  METAL: 0xC0C0C0
+};
 
 export class BuildingBuilder {
   constructor() {}
@@ -15,26 +20,17 @@ export class BuildingBuilder {
   build(position = { x: 0, y: 0, z: 0 }, width = 2.5, height = 6, depth = 3, hasBalcony = false, side = 'left') {
     const group = new THREE.Group();
 
-    const facadeColor = BUILDING_COLORS[Math.floor(Math.random() * BUILDING_COLORS.length)];
-    const facadeMat = new THREE.MeshStandardMaterial({ color: facadeColor, roughness: 0.9, metalness: 0.1 });
-    const accentColor = ACCENT_COLORS[Math.floor(Math.random() * ACCENT_COLORS.length)];
-    const facadeAccentMat = new THREE.MeshStandardMaterial({ color: accentColor, roughness: 0.8, metalness: 0.2 });
-    const frameColor = WINDOW_FRAME_COLORS[Math.floor(Math.random() * WINDOW_FRAME_COLORS.length)];
-    const frameMat = new THREE.MeshStandardMaterial({ color: frameColor, roughness: 0.7, metalness: 0.3 });
-    const windowLightColor = WINDOW_LIGHT_COLORS[Math.floor(Math.random() * WINDOW_LIGHT_COLORS.length)];
-    const windowLit = Math.random() > 0.4;
-    const windowMat = new THREE.MeshStandardMaterial({
-      color: windowLit ? windowLightColor : 0x1a1a1a, 
-      emissive: windowLit ? windowLightColor : 0, 
-      emissiveIntensity: windowLit ? 0.3 + Math.random() * 0.4 : 0
-    });
-    const balconyMat = new THREE.MeshStandardMaterial({ color: 0x5A5A5A, roughness: 0.85, metalness: 0.15 });  // Gray concrete instead of brown wood
-    const balconyRailingMat = new THREE.MeshStandardMaterial({ color: 0x3A3A3A, roughness: 0.6, metalness: 0.5 });
-    const roofMat = new THREE.MeshStandardMaterial({ color: 0x2C2C2C, roughness: 0.95, metalness: 0.05 });
+    const facadeMat = materialCache.get('m-gray');
+    const facadeAccentMat = materialCache.get('m-blue');
+    const frameMat = materialCache.get('m-dark');
+    const windowMat = materialCache.get('m-yellow');
+    const balconyMat = materialCache.get('m-gray');
+    const balconyRailingMat = materialCache.get('m-metal');
+    const roofMat = materialCache.get('m-black');
 
     const baseHeight = 0.3;
     const baseGeo = new THREE.BoxGeometry(width, baseHeight, depth);
-    const baseMat = new THREE.MeshStandardMaterial({ color: 0x555555, roughness: 0.95, metalness: 0.05 });  // Gray base for street-level feel
+    const baseMat = materialCache.get('m-light');
     const base = new THREE.Mesh(baseGeo, baseMat);
     base.position.set(0, baseHeight / 2, 0);
     base.receiveShadow = true;
@@ -95,7 +91,7 @@ export class BuildingBuilder {
         // AC Unit (40% chance): BoxGeometry 0.6x0.4x0.5
         const acGeo = new THREE.BoxGeometry(0.6, 0.4, 0.5);
         const acColor = 0x5A6A78;
-        const acMat = new THREE.MeshStandardMaterial({ color: acColor, roughness: 0.7, metalness: 0.3 });
+        const acMat = materialCache.get('m-blue', { color: acColor, roughness: 0.7, metalness: 0.3 });  // Share blue material
         const acUnit = new THREE.Mesh(acGeo, acMat);
         
         // Random position on roof surface (60% of roof width/depth)
@@ -109,7 +105,7 @@ export class BuildingBuilder {
         const antHeight = 1.2;
         const antGeo = new THREE.CylinderGeometry(0.03, 0.03, antHeight, 8);
         const antColor = 0xC0C0C0;
-        const antMat = new THREE.MeshStandardMaterial({ color: antColor, roughness: 0.6, metalness: 0.4 });
+        const antMat = materialCache.get('m-dark', { color: antColor, roughness: 0.6, metalness: 0.4 });  // Share dark material
         const antenna = new THREE.Mesh(antGeo, antMat);
         
         // Random position on roof surface
@@ -122,11 +118,7 @@ export class BuildingBuilder {
         // Red blinking light at top
         const lightGeo = new THREE.SphereGeometry(0.08, 8, 8);
         const lightColor = 0xFF0000;
-        const lightMat = new THREE.MeshStandardMaterial({ 
-          color: lightColor, 
-          emissive: lightColor, 
-          emissiveIntensity: 0.8 
-        });
+        const lightMat = materialCache.get('m-red', { color: 0xFF0000, roughness: 0.5 });  // Share red material
         const light = new THREE.Mesh(lightGeo, lightMat);
         light.position.set(antX, baseHeight + height + roofHeight / 2 + antHeight, antZ);
         group.add(light);
@@ -139,7 +131,7 @@ export class BuildingBuilder {
         const tankHeight = 0.8;
         const tankGeo = new THREE.CylinderGeometry(tankRadius, tankRadius, tankHeight, 8);
         const tankColor = 0x8B9BA8;
-        const tankMat = new THREE.MeshStandardMaterial({ color: tankColor, roughness: 0.8, metalness: 0.1 });
+        const tankMat = materialCache.get('m-gray', { color: tankColor, roughness: 0.8, metalness: 0.1 });  // Share gray material
         const waterTank = new THREE.Mesh(tankGeo, tankMat);
         
         // Random position on roof surface
@@ -166,26 +158,51 @@ export class BuildingBuilder {
 
         const balconyX = roadDir * (width / 2 + balconyProtrusion / 2);
 
+        // Floor
         const floorGeo = new THREE.BoxGeometry(balconyProtrusion, 0.12, balconyLength);
-        const floor = new THREE.Mesh(floorGeo, balconyMat);
+        const floorMat = materialCache.get('m-gray', { color: 0x5A5A5A, roughness: 0.85, metalness: 0.15 });
+        const floor = new THREE.Mesh(floorGeo, floorMat);
         floor.position.set(balconyX, currentBalconyY, 0);
         floor.castShadow = true;
         floor.receiveShadow = true;
         group.add(floor);
 
+        // Posts (RED)
+        // Posts - RED for visibility
         const postGeo = new THREE.BoxGeometry(0.05, railingHeight, 0.05);
+        const postMat = materialCache.get('m-red', { color: 0xFF0000, roughness: 0.6, metalness: 0.5 });  // Share red material
         for (let i = 0; i < postCount; i++) {
           const postZ = -balconyLength / 2 + (balconyLength / (postCount - 1)) * i;
-          const post = new THREE.Mesh(postGeo, balconyRailingMat);
+          const post = new THREE.Mesh(postGeo, postMat);
           post.position.set(balconyX + roadDir * (balconyProtrusion / 2 - 0.025), currentBalconyY + 0.06 + railingHeight / 2, postZ);
           post.castShadow = true;
           group.add(post);
         }
 
-        const topRailGeo = new THREE.BoxGeometry(balconyProtrusion + 0.1, 0.04, balconyLength);
-        const topRail = new THREE.Mesh(topRailGeo, balconyRailingMat);
-        topRail.position.set(balconyX, currentBalconyY + 0.12 + railingHeight, 0);
+        // Top rail - sits ON TOP of posts, connected to facade
+        const railThickness = 0.05;  // Thin rail
+        const railHeight = 0.04;
+        const railLength = balconyLength;  // Match balcony length
+        const railGeo = new THREE.BoxGeometry(railThickness, railHeight, railLength);
+        const railMat = materialCache.get('m-metal', { color: COLORS.METAL, roughness: 0.6, metalness: 0.5 });
+        const topRail = new THREE.Mesh(railGeo, railMat);
+        // Position: on top of posts (post top = currentBalconyY + 0.06 + railingHeight)
+        // X position: aligned with post outer edge
+        topRail.position.set(balconyX + roadDir * (balconyProtrusion / 2 - 0.05), currentBalconyY + 0.06 + railingHeight + railHeight / 2, 0);
+        topRail.castShadow = true;
         group.add(topRail);
+        
+        // Side rails - connect posts on left and right sides of balcony
+        const sideRailGeo = new THREE.BoxGeometry(balconyProtrusion, railHeight, 0.04);
+        const leftSideRail = new THREE.Mesh(sideRailGeo, railMat);
+        leftSideRail.position.set(balconyX + roadDir * (balconyProtrusion / 2 - 0.05), currentBalconyY + 0.06 + railingHeight / 2, -balconyLength / 2);
+        leftSideRail.castShadow = true;
+        group.add(leftSideRail);
+        
+        const rightSideRail = new THREE.Mesh(sideRailGeo, railMat);
+        rightSideRail.position.set(balconyX + roadDir * (balconyProtrusion / 2 - 0.05), currentBalconyY + 0.06 + railingHeight / 2, balconyLength / 2);
+        rightSideRail.castShadow = true;
+        group.add(rightSideRail);
 
         // Add window UNDER the first balcony only (at balcony floor level)
         // Window should be ~1.8m tall (player height) for access
@@ -203,11 +220,8 @@ export class BuildingBuilder {
 
           const underGlassGeo = new THREE.BoxGeometry(0.04, underBalconyWindowHeight, underBalconyWindowWidth);
           const underWindowLit = Math.random() > 0.5;
-          const underWindowMat = new THREE.MeshStandardMaterial({
-            color: underWindowLit ? windowLightColor : 0x1a1a1a,
-            emissive: underWindowLit ? windowLightColor : 0,
-            emissiveIntensity: underWindowLit ? 0.3 + Math.random() * 0.4 : 0
-          });
+          // No emissive - use bright color only
+          const underWindowMat = materialCache.get('m-yellow');
           const underWindowGlass = new THREE.Mesh(underGlassGeo, underWindowMat);
           underWindowGlass.position.set(facadeX + roadDir * 0.03, underBalconyWindowY, 0);
           underWindowGlass.castShadow = false;  // No shadows on windows

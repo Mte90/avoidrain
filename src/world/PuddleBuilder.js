@@ -13,18 +13,17 @@ export class PuddleBuilder {
     
     // Use cached material instead of creating new instances
     const material = materialCache.get('puddle', {
-      color: 0x2a3a4a,
+      color: 0x3a4a5a,
       transparent: true,
-      opacity: 0.6,
+      opacity: 0.8,
       metalness: 0.9,
-      roughness: 0.1,
-      emissive: 0x1a2a3a,
-      emissiveIntensity: 0.1
+      roughness: 0.1
+      // No emissive - not needed for puddles
     });
     
     const puddle = new THREE.Mesh(geometry, material);
     puddle.rotation.x = -Math.PI / 2;
-    puddle.position.set(x, 0.01, z);
+    puddle.position.set(x, y, z);  // Use passed y parameter
     puddle.castShadow = false;
     puddle.receiveShadow = false;
     puddle.userData = { type: 'puddle' };

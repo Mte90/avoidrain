@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { materialCache } from '../utils/MaterialCache.js';
 
 export class PortalManager {
   constructor() {
@@ -63,12 +64,11 @@ export class PortalManager {
 
     // Portal ring (torus)
     const ringGeometry = new THREE.TorusGeometry(2, 0.15, 16, 100);
-    const ringMaterial = new THREE.MeshStandardMaterial({
+    const ringMaterial = materialCache.get('m-purple', {
       color: 0x667eea,
-      emissive: 0x667eea,
-      emissiveIntensity: 0.5,
       metalness: 0.8,
       roughness: 0.2
+      // No emissive - portal glow is visual effect, not essential
     });
     const ring = new THREE.Mesh(ringGeometry, ringMaterial);
     ring.rotation.x = Math.PI / 2;

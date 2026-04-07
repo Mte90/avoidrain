@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { materialCache } from '../utils/MaterialCache.js';
 
 export class StreetLampBuilder {
   constructor() {}
@@ -9,7 +10,7 @@ export class StreetLampBuilder {
     const poleHeight = 3.5;
     const poleRadius = 0.15;
     const poleGeo = new THREE.CylinderGeometry(poleRadius, poleRadius, poleHeight, 16);
-    const poleMat = new THREE.MeshStandardMaterial({ 
+    const poleMat = materialCache.get('m-dark', { 
       color: 0x2a2a2a, 
       roughness: 0.7, 
       metalness: 0.3 
@@ -24,10 +25,8 @@ export class StreetLampBuilder {
     const headHeight = 0.3;
     const headDepth = 0.25;
     const headGeo = new THREE.BoxGeometry(headWidth, headHeight, headDepth);
-    const headMat = new THREE.MeshStandardMaterial({ 
-      color: 0x1a1a1a,
-      emissive: 0xFFAA00,
-      emissiveIntensity: 0.5,
+    const headMat = materialCache.get('m-yellow', { 
+      color: 0xFFAA00,  // Bright color instead of emissive
       roughness: 0.6,
       metalness: 0.4
     });
@@ -52,7 +51,7 @@ export class StreetLampBuilder {
     const baseHeight = 0.2;
     const baseRadius = 0.3;
     const baseGeo = new THREE.CylinderGeometry(baseRadius, baseRadius, baseHeight, 16);
-    const baseMat = new THREE.MeshStandardMaterial({ 
+    const baseMat = materialCache.get('m-gray', { 
       color: 0x3a3a3a, 
       roughness: 0.8, 
       metalness: 0.2 
