@@ -27,6 +27,9 @@ export class PlayerController {
     this.leftLeg = null;
     this.rightLeg = null;
     
+    // Hair wetness effect
+    this.hairWetness = 0;
+    
     // Build character - start at Y=1.8 so body is above road, legs hang down
     this.characterBuilder = new CharacterBuilder();
     this.group = this.characterBuilder.build({ x: this.LEFT_SIDE, y: 0.1, z: 0 });
@@ -113,6 +116,15 @@ export class PlayerController {
   
   getPosition() {
     return this.group.position.clone();
+  }
+  
+  setHairWetness(wetnessPercent) {
+    this.hairWetness = wetnessPercent;
+    this.characterBuilder.updateHairWetness(this.group, wetnessPercent);
+  }
+  
+  getHairWetness() {
+    return this.hairWetness;
   }
   
   isOnRoad() {

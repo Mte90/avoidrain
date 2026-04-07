@@ -8,6 +8,7 @@
     "build": "vite build"
   },
   "dependencies": {
+    "puppeteer": "^24.40.0",
     "three": "^0.168.0"
   },
   "devDependencies": {

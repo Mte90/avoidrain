@@ -9,12 +9,18 @@ import { WetMeter } from './systems/WetMeter.js';
 import { DifficultyManager } from './systems/DifficultyManager.js';
 import { ScoreManager } from './systems/ScoreManager.js';
 import { UIManager } from './ui/UIManager.js';
+import { BackdropBuilder } from './world/BackdropBuilder.js';
 
 export class Game {
   constructor() {
     this.scene = new THREE.Scene();
     this.scene.background = new THREE.Color(0x3a4a5a);
     this.scene.fog = new THREE.Fog(0x8899aa, 25, 90);
+
+    this.backdropBuilder = new BackdropBuilder();
+    this.backdrop = this.backdropBuilder.createBackdrop(8);
+    this.backdrop.position.z = -80;
+    this.scene.add(this.backdrop);
 
     this.camera = new THREE.PerspectiveCamera(
       75,
@@ -31,8 +37,8 @@ export class Game {
     this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     document.getElementById('canvas-container').appendChild(this.renderer.domElement);
 
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.55);
-    this.scene.add(ambientLight);
+    this.ambientLight = new THREE.AmbientLight(0xffffff, 0.55);
+    this.scene.add(this.ambientLight);
 
     const directionalLight = new THREE.DirectionalLight(0xfff5e6, 1.0);
     directionalLight.position.set(10, 15, 10);
@@ -74,6 +80,10 @@ export class Game {
     this.lastTime = performance.now();
     this.isRunning = true;
     this.gameTime = 0;
+
+    // Lightning system - random 10-30 seconds between strikes
+    this.lightningTimer = 0;
+    this.nextLightning = 10 + Math.random() * 20;
 
     this.setupEventListeners();
     this.uiManager.init();
@@ -158,6 +168,24 @@ export class Game {
     this.uiManager.setGameOverScore(this.scoreManager.getScore());
   }
 
+  triggerLightning() {
+    // Flash: increase ambient light to 3.0 for 100ms
+    this.ambientLight.intensity = 3.0;
+    setTimeout(() => {
+      this.ambientLight.intensity = 0.55;
+    }, 100);
+
+    // Thunder: play after delay (0.5-3 seconds for distance effect)
+    const thunderDelay = 0.5 + Math.random() * 2.5;
+    setTimeout(() => {
+      this.audioManager.playThunder();
+    }, thunderDelay * 1000);
+
+    // Schedule next lightning: 10-30 seconds
+    this.lightningTimer = 0;
+    this.nextLightning = 10 + Math.random() * 20;
+  }
+
   update(delta) {
     const state = this.gameState.getState();
 
@@ -179,8 +207,11 @@ export class Game {
       this.difficultyManager.update(delta);
       this.player.update(delta);
       this.chunkManager.update(playerPos.z);
+      this.chunkManager.groundBuilder.updateWetness(this.difficultyManager.getRainIntensity());
       this.chunkManager.updateCars(delta);
       this.rainSystem.update(delta);
+
+      this.backdropBuilder.updateBuildingPositions(this.backdrop, playerPos.z);
 
       const chunks = this.chunkManager.getActiveChunks();
       const cars = this.chunkManager.cars;
@@ -199,14 +230,20 @@ export class Game {
       this.scoreManager.setDistance(-playerPos.z);
       this.scoreManager.update(delta, this.wetMeter.getIsUnderShelter());
 
-      if (this.gameState.getState() === GameState.GAME_OVER) {
-        this.handleGameOver();
+      this.player.setHairWetness(this.wetMeter.getWetMeter());
+
+      if (this.gameState.getState() === GameState.GAME_OVER) {        this.handleGameOver();
       }
     }
 
     const wetMeterValue = this.wetMeter.getWetMeter();
     const score = this.scoreManager.getScore();
     this.uiManager.update(wetMeterValue, score, this.gameTime, this.gameState.getState());
+
+    this.lightningTimer += delta;
+    if (this.lightningTimer >= this.nextLightning) {
+      this.triggerLightning();
+    }
   }
 
   render() {
@@ -258,3 +295,6 @@ export class Game {
 
 const game = new Game();
 game.start();
+// Export game globally for testing
+window.game = game;
+

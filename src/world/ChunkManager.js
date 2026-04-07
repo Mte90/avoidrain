@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { BuildingBuilder } from './BuildingBuilder.js';
 import { CarBuilder } from './CarBuilder.js';
 import { GroundBuilder } from './GroundBuilder.js';
+import { StreetLampBuilder } from './StreetLampBuilder.js';
 import { DifficultyManager } from '../systems/DifficultyManager.js';
 
 const CHUNK_SIZE = 40;
@@ -219,6 +220,7 @@ export class ChunkManager {
     chunk.add(backdropRight);
 
     this.spawnCarsForChunk(chunk, chunkZ);
+    this.spawnStreetLampsForChunk(chunk, chunkZ);
 
     return chunk;
   }
@@ -239,6 +241,32 @@ export class ChunkManager {
         const car = this.createCar({ x: lane, y: 0, z: carZ });
         chunk.add(car);
       }
+    }
+  }
+
+  spawnStreetLampsForChunk(chunk, chunkZ) {
+    const streetLampBuilder = new StreetLampBuilder();
+    const length = CHUNK_SIZE;
+    const spawnInterval = 15 + Math.random() * 5;
+    
+    for (let z = chunkZ - length / 2 + 5; z < chunkZ + length / 2; z += spawnInterval) {
+      const leftLamp = streetLampBuilder.build({ x: -5.5, y: 0, z: z });
+      leftLamp.traverse((child) => {
+        if (child.isMesh) {
+          child.castShadow = true;
+          child.receiveShadow = true;
+        }
+      });
+      chunk.add(leftLamp);
+
+      const rightLamp = streetLampBuilder.build({ x: 5.5, y: 0, z: z });
+      rightLamp.traverse((child) => {
+        if (child.isMesh) {
+          child.castShadow = true;
+          child.receiveShadow = true;
+        }
+      });
+      chunk.add(rightLamp);
     }
   }
 
@@ -378,6 +406,7 @@ export class ChunkManager {
       chunk.add(rightBuilding);
     }
     this.spawnCarsForChunk(chunk, chunkZ);
+    this.spawnStreetLampsForChunk(chunk, chunkZ);
   }
 
   recycleCar(car) {

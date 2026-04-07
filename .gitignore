@@ -4,3 +4,5 @@ dist
 screenshots
 test-results/
 dist/
+package-lock.json
+.playwright-mcp

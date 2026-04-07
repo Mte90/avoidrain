@@ -157,6 +157,18 @@ export class CharacterBuilder {
     group.add(rightLegGroup);
 
     group.position.set(position.x, position.y, position.z);
+    // Store hair mesh reference for wetness effect
+    group.userData.hairMesh = hair;
     return group;
+  }
+
+  updateHairWetness(group, wetnessPercent) {
+    const hairMesh = group.userData.hairMesh;
+    if (!hairMesh) return;
+    
+    const dryColor = new THREE.Color(0x4A3728);
+    const wetColor = new THREE.Color(0x2a1a10);
+    const normalizedWetness = Math.max(0, Math.min(1, wetnessPercent / 100));
+    hairMesh.material.color.lerpColors(dryColor, wetColor, normalizedWetness);
   }
 }

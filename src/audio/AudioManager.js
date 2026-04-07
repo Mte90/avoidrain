@@ -231,6 +231,84 @@ export class AudioManager {
   }
 
   /**
+   * Play thunder sound - low frequency oscillator with noise for rumble
+   * Uses 50-100Hz oscillator + filtered noise for realistic thunder
+   */
+  playThunder() {
+    if (!this.isInitialized || this.isMuted) return;
+
+    const now = this.audioContext.currentTime;
+    const duration = 1.5 + Math.random() * 1.5; // 1.5-3 seconds
+
+    // Low frequency oscillator for the "boom"
+    const oscillator = this.audioContext.createOscillator();
+    oscillator.type = 'sine';
+    oscillator.frequency.setValueAtTime(80 + Math.random() * 40, now); // 80-120Hz
+    oscillator.frequency.exponentialRampToValueAtTime(30, now + duration);
+
+    // Secondary oscillator for rumble
+    const oscillator2 = this.audioContext.createOscillator();
+    oscillator2.type = 'triangle';
+    oscillator2.frequency.setValueAtTime(50, now);
+    oscillator2.frequency.exponentialRampToValueAtTime(20, now + duration);
+
+    // Noise for the "crackle" texture
+    const noiseBuffer = this.createNoiseBuffer(duration);
+    const noise = this.audioContext.createBufferSource();
+    noise.buffer = noiseBuffer;
+
+    // Low-pass filter for noise rumble
+    const noiseLowpass = this.audioContext.createBiquadFilter();
+    noiseLowpass.type = 'lowpass';
+    noiseLowpass.frequency.value = 200;
+    noiseLowpass.Q.value = 0.5;
+
+    // High-pass to remove DC offset
+    const noiseHighpass = this.audioContext.createBiquadFilter();
+    noiseHighpass.type = 'highpass';
+    noiseHighpass.frequency.value = 20;
+
+    // Envelope for oscillators - quick attack, slow decay
+    const gain = this.audioContext.createGain();
+    gain.gain.setValueAtTime(0, now);
+    gain.gain.linearRampToValueAtTime(0.5, now + 0.05);
+    gain.gain.exponentialRampToValueAtTime(0.01, now + duration);
+
+    const gain2 = this.audioContext.createGain();
+    gain2.gain.setValueAtTime(0, now);
+    gain2.gain.linearRampToValueAtTime(0.3, now + 0.02);
+    gain2.gain.exponentialRampToValueAtTime(0.01, now + duration);
+
+    // Envelope for noise
+    const noiseGain = this.audioContext.createGain();
+    noiseGain.gain.setValueAtTime(0, now);
+    noiseGain.gain.linearRampToValueAtTime(0.4, now + 0.03);
+    noiseGain.gain.exponentialRampToValueAtTime(0.01, now + duration * 0.8);
+
+    // Connect oscillators to their gains then to master
+    oscillator.connect(gain);
+    gain.connect(this.masterGain);
+
+    oscillator2.connect(gain2);
+    gain2.connect(this.masterGain);
+
+    // Connect noise through filters then to master
+    noise.connect(noiseLowpass);
+    noiseLowpass.connect(noiseHighpass);
+    noiseHighpass.connect(noiseGain);
+    noiseGain.connect(this.masterGain);
+
+    // Start and stop
+    oscillator.start(now);
+    oscillator2.start(now);
+    noise.start(now);
+
+    oscillator.stop(now + duration + 0.1);
+    oscillator2.stop(now + duration + 0.1);
+    noise.stop(now + duration + 0.1);
+  }
+
+  /**
    * Play game over sound - descending tone 800Hz → 200Hz
    */
   playGameOver() {

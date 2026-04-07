@@ -7,14 +7,17 @@ const CURB_COLORS = [0x666666, 0x777777, 0x6A6A6A];
 
 export class GroundBuilder {
   constructor() {
+    this.baseSidewalkRoughness = 0.95;
+    this.baseRoadRoughness = 0.85;
+    
     this.sidingMat = new THREE.MeshStandardMaterial({ 
       color: SIDING_COLORS[0],
-      roughness: 0.95,
+      roughness: this.baseSidewalkRoughness,
       metalness: 0.02
     });
     this.roadMat = new THREE.MeshStandardMaterial({ 
       color: ROAD_COLOR,
-      roughness: 0.85,
+      roughness: this.baseRoadRoughness,
       metalness: 0.05
     });
     this.lineMat = new THREE.MeshStandardMaterial({ 
@@ -97,6 +100,49 @@ export class GroundBuilder {
     rightEdgeLine.position.set(roadWidth / 2 - 0.15, 0.06, 0);
     group.add(rightEdgeLine);
 
+    // Crosswalk stripes (6 stripes, 0.4w x 2.0l, every ~80 units based on chunk Z)
+    const crosswalkWidth = 0.4;
+    const crosswalkLength = 2.0;
+    const crosswalkSpacing = 80;
+    
+    // Position based on chunk Z to ensure consistent crosswalk placement across segments
+    const chunkZ = position.z;
+    const stripeOffset = (chunkZ % crosswalkSpacing) - length / 2 + crosswalkSpacing / 2;
+    
+    for (let i = 0; i < 6; i++) {
+      const crosswalkZ = stripeOffset + i * (crosswalkSpacing / 6);
+      
+      // Only add if the stripe is within the current segment length
+      if (crosswalkZ >= -length / 2 && crosswalkZ <= length / 2) {
+        const crosswalkGeo = new THREE.BoxGeometry(crosswalkWidth, 0.08, crosswalkLength);
+        const crosswalk = new THREE.Mesh(crosswalkGeo, this.lineMat);
+        crosswalk.position.set(0, 0.06, crosswalkZ);
+        group.add(crosswalk);
+      }
+    }
+
+    // Manhole covers (2 random positions on road surface, radius 0.3 circles)
+    const numManholes = 2;
+    const manholeRadius = 0.3;
+    
+    for (let i = 0; i < numManholes; i++) {
+      // Random X position on road (within road width)
+      const manholeX = (Math.random() - 0.5) * roadWidth;
+      // Random Z position along the road
+      const manholeZ = (Math.random() - 0.5) * length;
+      
+      const manholeGeo = new THREE.CircleGeometry(manholeRadius, 16);
+      const manholeMat = new THREE.MeshStandardMaterial({ 
+        color: 0x1a1a1a,
+        roughness: 0.95,
+        metalness: 0.05
+      });
+      const manhole = new THREE.Mesh(manholeGeo, manholeMat);
+      manhole.rotation.x = -Math.PI / 2;
+      manhole.position.set(manholeX, 0.06, manholeZ);
+      group.add(manhole);
+    }
+
     // Sidewalk texture details - random subtle variations
     const numTiles = Math.floor(length / 2);
     for (let i = 0; i < numTiles; i++) {
@@ -119,5 +165,13 @@ export class GroundBuilder {
 
     group.position.set(position.x, position.y, position.z);
     return group;
+  }
+
+  updateWetness(rainIntensity) {
+    const sidewalkRoughnessReduction = 0.35;
+    const roadRoughnessReduction = 0.3;
+    
+    this.sidingMat.roughness = this.baseSidewalkRoughness - (rainIntensity * sidewalkRoughnessReduction);
+    this.roadMat.roughness = this.baseRoadRoughness - (rainIntensity * roadRoughnessReduction);
   }
 }
