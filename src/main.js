@@ -72,7 +72,7 @@ export class Game {
 
     this.chunkManager = new ChunkManager(this.scene);
     this.chunkManager.setDifficultyManager(this.difficultyManager);
-    this.chunkManager.initialize(0);
+    this.chunkManager.resize({ x: 0, y: 0, z: 0 });
 
     this.rainSystem = new RainSystem(this.scene, 0.5);
     this.rainSystem.setDifficultyManager(this.difficultyManager);
@@ -168,7 +168,7 @@ export class Game {
     this.chunkManager.dispose();
     this.chunkManager = new ChunkManager(this.scene);
     this.chunkManager.setDifficultyManager(this.difficultyManager);
-    this.chunkManager.initialize(0);
+    this.chunkManager.resize({ x: 0, y: 0, z: 0 });
     const playerPos = this.player.getPosition();
     this.rainSystem.setPlayerPosition(playerPos.x, playerPos.y, playerPos.z);
   }

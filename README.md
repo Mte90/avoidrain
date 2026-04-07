@@ -61,7 +61,6 @@ npm run preview
 ## 🛠️ Tech Stack
 
 - **Three.js** - 3D rendering
-- **Vite** - Build tool and dev server
 - **Vanilla JavaScript** - No UI framework
 
 ## 🎨 Procedural Assets
