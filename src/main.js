@@ -200,6 +200,9 @@ export class Game {
     }
     
     this.rainSystem.setPlayerPosition(playerPos.x, playerPos.y, playerPos.z);
+    
+    // Animate antenna blinking lights
+    this.animateAntennas(delta);
 
     if (state === GameState.PLAYING) {
       this.gameTime += delta;
@@ -290,6 +293,19 @@ export class Game {
 
   getDifficultyManager() {
     return this.difficultyManager;
+  }
+
+  animateAntennas(delta) {
+    this.scene.traverse((child) => {
+      if (child.userData && child.userData.isAntenna) {
+        const light = child.userData.light;
+        if (light && light.material) {
+          const blinkSpeed = 10 + child.userData.blinkOffset;
+          const intensity = (Math.sin(this.gameTime * blinkSpeed) + 1) / 2;
+          light.material.emissiveIntensity = 0.3 + intensity * 0.7;
+        }
+      }
+    });
   }
 }
 

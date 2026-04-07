@@ -1,107 +1,111 @@
 # AvoidRain - 3D Endless Runner
 
-Un gioco browser 3D dove corri sotto i balconi per evitare la pioggia!
+A 3D browser game where you run under balconies to avoid the rain!
 
-## 🎮 Come Giocare
+## 🎮 How to Play
 
-**Obiettivo**: Sopravvivi il più a lungo possibile rimanendo asciutto sotto i balconi dei palazzi.
+**Goal**: Survive as long as possible by staying dry under building balconies.
 
-**Controlli**:
-- **Tastiera**: 
-  - `A` / `Freccia Sinistra` → Spostati a sinistra
-  - `D` / `Freccia Destra` → Spostati a destra
-  - `Invio` / `Spazio` → Inizia/Ricomincia il gioco
+**Controls**:
+- **Keyboard**: 
+  - `A` / `Left Arrow` → Move left
+  - `D` / `Right Arrow` → Move right
+  - `Enter` / `Space` → Start/Restart game
 - **Touch (mobile)**:
-  - Swipe sinistra/destra → Spostati
-  - Tocca per iniziare
+  - Swipe left/right → Move
+  - Tap to start
 
-**Meccaniche**:
-- La pioggia riempie il **wet meter** (barra verde/rossa in alto a sinistra)
-- Sotto i balconi il wet meter si svuota
-- Se raggiunge 100% → Game Over!
-- Le macchine sulla strada ti spingono indietro e aumentano la bagnatura
-- La difficoltà aumenta col tempo (meno balconi, più pioggia, più macchine)
+**Mechanics**:
+- Rain fills the **wet meter** (green/red bar in top-left)
+- Under balconies, the wet meter drains
+- If it reaches 100% → Game Over!
+- Cars on the road push you back and increase wetness
+- Difficulty increases over time (fewer balconies, more rain, more cars)
 
-## 🚀 Esecuzione Locale
+## 🚀 Local Setup
 
-### Prerequisiti
-- [Node.js](https://nodejs.org/) (versione 16 o superiore)
-- npm (incluso con Node.js)
+### Prerequisites
+- [Node.js](https://nodejs.org/) (version 16 or higher)
+- npm (included with Node.js)
 
-### Installazione
+### Installation
 
 ```bash
-# Clona il repository (se non lo hai già)
+# Clone the repository (if you haven't already)
 cd avoidrain
 
-# Installa le dipendenze
+# Install dependencies
 npm install
 ```
 
-### Avvio Development Server
+### Start Development Server
 
 ```bash
-# Avvia il server di sviluppo
+# Start the development server
 npm run dev
 ```
 
-Il gioco sarà disponibile all'indirizzo: **http://localhost:5173**
+The game will be available at: **http://localhost:5173**
 
-### Build per Produzione
+### Production Build
 
 ```bash
-# Crea una build ottimizzata
+# Create an optimized build
 npm run build
 
-# Preview della build di produzione
+# Preview the production build
 npm run preview
 ```
 
-## 🛠️ Stack Tecnologico
+## 🛠️ Tech Stack
 
-- **Three.js** - Rendering 3D
-- **Vite** - Build tool e dev server
-- **Vanilla JavaScript** - Nessun framework UI
+- **Three.js** - 3D rendering
+- **Vite** - Build tool and dev server
+- **Vanilla JavaScript** - No UI framework
 
-## 📁 Struttura del Progetto
+## 📁 Project Structure
 
 ```
 avoidrain/
 ├── src/
-│   ├── audio/          # Sistema audio procedurale
-│   ├── environment/    # Sistema pioggia
-│   ├── input/          # Gestione input (tastiera/touch)
-│   ├── player/         # Personaggio e controller
+│   ├── audio/          # Procedural audio system
+│   ├── environment/    # Rain system
+│   ├── input/          # Input handling (keyboard/touch)
+│   ├── player/         # Character and controller
 │   ├── systems/        # Game logic (wet meter, score, difficulty)
-│   ├── ui/             # Interfaccia utente
-│   ├── world/          # Generazione procedurale mondo
+│   ├── ui/             # User interface
+│   ├── world/          # Procedural world generation
 │   └── main.js         # Entry point
 ├── index.html
 ├── package.json
 └── README.md
 ```
 
-## 🎨 Asset Procedurali
+## 🎨 Procedural Assets
 
-Tutti gli asset sono generati proceduralmente:
-- Personaggio low-poly (box + sphere + cylinder)
-- Palazzi con finestre e balconi
-- Macchine con colori casuali
-- Suoni via Web Audio API (nessun file audio esterno)
+All assets are generated procedurally:
+- Low-poly character (box + sphere + cylinder)
+- Buildings with windows and balconies
+- Cars with random colors
+- Sounds via Web Audio API (no external audio files)
 
 ## 🎯 Features
 
-- ✅ Mondo procedurale infinito
-- ✅ Sistema pioggia con particelle
-- ✅ Balconi asimmetrici (SX/DX/BOTH/NEITHER)
-- ✅ Macchine con collisione
-- ✅ Wet meter con fill/drain
-- ✅ Difficoltà progressiva
-- ✅ Punteggio (tempo + distanza + bonus asciutto)
-- ✅ Suoni procedurali
-- ✅ UI responsive
-- ✅ Controlli tastiera + touch
+- ✅ Infinite procedural world
+- ✅ Rain system with particles
+- ✅ Asymmetric balconies (LEFT/RIGHT/BOTH/NEITHER)
+- ✅ Cars with collision
+- ✅ Wet meter with fill/drain
+- ✅ Progressive difficulty
+- ✅ Score (time + distance + dry bonus)
+- ✅ Procedural sounds
+- ✅ Responsive UI
+- ✅ Keyboard + touch controls
 
-## 📝 Licenza
+## 📝 Credits
 
-Progetto didattico.
+Built with **OpenCode** using **Regolo.AI** models.
+
+## 📄 License
+
+Educational project.

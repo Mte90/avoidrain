@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { BuildingBuilder } from './BuildingBuilder.js';
 import { CarBuilder } from './CarBuilder.js';
 import { GroundBuilder } from './GroundBuilder.js';
+import { PuddleBuilder } from './PuddleBuilder.js';
 import { StreetLampBuilder } from './StreetLampBuilder.js';
 import { DifficultyManager } from '../systems/DifficultyManager.js';
 
@@ -26,11 +27,14 @@ export class ChunkManager {
     this.buildingBuilder = new BuildingBuilder();
     this.carBuilder = new CarBuilder();
     this.groundBuilder = new GroundBuilder();
+    this.obstacleBuilder = new ObstacleBuilder();
 
     this.cars = [];
     this.carPool = [];
     this.buildingPositions = [];
+    this.obstacles = [];
     
+    this.puddleBuilder = new PuddleBuilder();
     this.lastGeneratedChunkZ = 0;
   }
 
@@ -221,6 +225,8 @@ export class ChunkManager {
 
     this.spawnCarsForChunk(chunk, chunkZ);
     this.spawnStreetLampsForChunk(chunk, chunkZ);
+    this.spawnPuddlesForChunk(chunk, chunkZ);
+    this.spawnObstaclesForChunk(chunk, chunkZ);
 
     return chunk;
   }
@@ -267,6 +273,26 @@ export class ChunkManager {
         }
       });
       chunk.add(rightLamp);
+    }
+  }
+
+  spawnPuddlesForChunk(chunk, chunkZ) {
+    const length = CHUNK_SIZE;
+    const puddleSpawnChance = 0.15;
+    
+    for (let z = chunkZ - length / 2; z < chunkZ + length / 2; z += 2) {
+      if (Math.random() < puddleSpawnChance) {
+        const puddleX = -2 + Math.random() * 4;
+        const puddle = this.puddleBuilder.build({ x: puddleX, y: 0, z: z });
+        puddle.traverse((child) => {
+          if (child.isMesh) {
+            child.castShadow = false;
+            child.receiveShadow = false;
+          }
+        });
+        chunk.add(puddle);
+        this.puddles.push({ mesh: puddle, chunkZ, lastCollision: 0 });
+      }
     }
   }
 

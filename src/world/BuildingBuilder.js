@@ -82,6 +82,71 @@ export class BuildingBuilder {
     roof.castShadow = true;
     group.add(roof);
 
+    // Add rooftop elements (AC units, antennas, water tanks)
+    const numElements = 1 + Math.floor(Math.random() * 2); // 1-2 elements
+    for (let i = 0; i < numElements; i++) {
+      const elementRandom = Math.random();
+      
+      if (elementRandom < 0.4) {
+        // AC Unit (40% chance): BoxGeometry 0.6x0.4x0.5
+        const acGeo = new THREE.BoxGeometry(0.6, 0.4, 0.5);
+        const acColor = 0x5A6A78;
+        const acMat = new THREE.MeshStandardMaterial({ color: acColor, roughness: 0.7, metalness: 0.3 });
+        const acUnit = new THREE.Mesh(acGeo, acMat);
+        
+        // Random position on roof surface (60% of roof width/depth)
+        const acX = (Math.random() - 0.5) * (width * 0.6);
+        const acZ = (Math.random() - 0.5) * (depth * 0.6);
+        acUnit.position.set(acX, baseHeight + height + roofHeight / 2 + 0.2, acZ);
+        acUnit.castShadow = true;
+        group.add(acUnit);
+      } else if (elementRandom < 0.65) {
+        // Antenna (25% chance): CylinderGeometry 1.2 units tall with red light
+        const antHeight = 1.2;
+        const antGeo = new THREE.CylinderGeometry(0.03, 0.03, antHeight, 8);
+        const antColor = 0xC0C0C0;
+        const antMat = new THREE.MeshStandardMaterial({ color: antColor, roughness: 0.6, metalness: 0.4 });
+        const antenna = new THREE.Mesh(antGeo, antMat);
+        
+        // Random position on roof surface
+        const antX = (Math.random() - 0.5) * (width * 0.6);
+        const antZ = (Math.random() - 0.5) * (depth * 0.6);
+        antenna.position.set(antX, baseHeight + height + roofHeight / 2 + antHeight / 2, antZ);
+        antenna.castShadow = true;
+        group.add(antenna);
+        
+        // Red blinking light at top
+        const lightGeo = new THREE.SphereGeometry(0.08, 8, 8);
+        const lightColor = 0xFF0000;
+        const lightMat = new THREE.MeshStandardMaterial({ 
+          color: lightColor, 
+          emissive: lightColor, 
+          emissiveIntensity: 0.8 
+        });
+        const light = new THREE.Mesh(lightGeo, lightMat);
+        light.position.set(antX, baseHeight + height + roofHeight / 2 + antHeight, antZ);
+        group.add(light);
+        
+        // Store blinking data for animation
+        antenna.userData = { isAntenna: true, light: light, blinkOffset: Math.random() * 100 };
+      } else {
+        // Water Tank (20% chance): CylinderGeometry 0.4x0.8
+        const tankRadius = 0.4;
+        const tankHeight = 0.8;
+        const tankGeo = new THREE.CylinderGeometry(tankRadius, tankRadius, tankHeight, 8);
+        const tankColor = 0x8B9BA8;
+        const tankMat = new THREE.MeshStandardMaterial({ color: tankColor, roughness: 0.8, metalness: 0.1 });
+        const waterTank = new THREE.Mesh(tankGeo, tankMat);
+        
+        // Random position on roof surface
+        const tankX = (Math.random() - 0.5) * (width * 0.6);
+        const tankZ = (Math.random() - 0.5) * (depth * 0.6);
+        waterTank.position.set(tankX, baseHeight + height + roofHeight / 2 + tankHeight / 2, tankZ);
+        waterTank.castShadow = true;
+        group.add(waterTank);
+      }
+    }
+
     if (hasBalcony) {
       const balconyProtrusion = 2.5;
 const balconyLength = 3.0;  // Full sidewalk coverage
