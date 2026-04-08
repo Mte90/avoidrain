@@ -22,7 +22,7 @@ export class ChunkManager {
     this.activeChunks = [];
     this.currentChunkZ = 0;
     this.playerZ = 0;
-    this.chunkAheadDistance = CHUNK_SIZE * 3;
+    this.chunkAheadDistance = CHUNK_SIZE * 4;
     this.chunkRecycleDistance = CHUNK_SIZE / 2;
 
     this.buildingBuilder = new BuildingBuilder();
@@ -66,7 +66,7 @@ export class ChunkManager {
     this.activeChunks = [];
     this.currentChunkZ = 0;
     this.playerZ = 0;
-    this.chunkAheadDistance = CHUNK_SIZE * 3;
+    this.chunkAheadDistance = CHUNK_SIZE * 4;
     this.chunkRecycleDistance = CHUNK_SIZE / 2;
 
     this.buildingBuilder = new BuildingBuilder();
@@ -288,7 +288,7 @@ export class ChunkManager {
     
     const carSpawnChance = this.difficultyManager 
       ? this.difficultyManager.getCarSpawnChance() 
-      : 0.2;
+      : 0.5;
     
     if (Math.random() < carSpawnChance) {
       const length = CHUNK_SIZE;
@@ -305,10 +305,12 @@ export class ChunkManager {
   spawnStreetLampsForChunk(chunk, chunkZ) {
     const streetLampBuilder = new StreetLampBuilder();
     const length = CHUNK_SIZE;
-    const spawnInterval = 12 + Math.random() * 6;  // More frequent lamps (was 15-20)
+    const spawnInterval = 12 + Math.random() * 6;
     
-    for (let z = chunkZ - length / 2 + 5; z < chunkZ + length / 2; z += spawnInterval) {
-      const leftLamp = streetLampBuilder.build({ x: -3.5, y: 0, z: z });  // On sidewalk at -3.5 (was -7.5)
+    for (let localZ = -length / 2 + 5; localZ < length / 2; localZ += spawnInterval) {
+      const worldZ = chunkZ + localZ;
+      const leftLamp = streetLampBuilder.build({ x: -3.5, y: 0, z: 0 });
+      leftLamp.position.z = localZ;
       leftLamp.traverse((child) => {
         if (child.isMesh) {
           child.castShadow = true;
@@ -317,7 +319,8 @@ export class ChunkManager {
       });
       chunk.add(leftLamp);
 
-      const rightLamp = streetLampBuilder.build({ x: 3.5, y: 0, z: z });  // On sidewalk at 3.5 (was 7.5)
+      const rightLamp = streetLampBuilder.build({ x: 3.5, y: 0, z: 0 });
+      rightLamp.position.z = localZ;
       rightLamp.traverse((child) => {
         if (child.isMesh) {
           child.castShadow = true;

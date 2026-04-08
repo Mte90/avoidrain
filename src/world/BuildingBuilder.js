@@ -47,8 +47,8 @@ export class BuildingBuilder {
 
     const roadDir = side === 'left' ? 1 : -1;
     const facadeX = roadDir * (width / 2 + 0.01);
-    const windowWidth = 0.7;  // Increased from 0.5
-    const windowHeight = 0.9;  // Increased from 0.7
+    const windowWidth = 0.7;
+    const windowHeight = 1.2;  // Taller, closer to door size
     const numWindowsZ = Math.max(2, Math.floor(depth / 2.5));
     const numWindowsY = Math.max(2, Math.floor(height / 2.0));
     const windowSpacingZ = depth / (numWindowsZ + 1);
@@ -204,30 +204,20 @@ export class BuildingBuilder {
         rightSideRail.castShadow = true;
         group.add(rightSideRail);
 
-        // Add window UNDER the first balcony only (at balcony floor level)
-        // Window should be ~1.8m tall (player height) for access
-        const underBalconyWindowY = bottomY + 0.9;  // Center at 0.9m, so bottom at 0m (ground level)
-        const underBalconyWindowHeight = 1.8;  // Player height for access
-        const underBalconyWindowWidth = 0.8;  // Slightly wider than regular windows
-        
-        if (b === 0 && underBalconyWindowY + underBalconyWindowHeight / 2 < currentBalconyY - 0.2) {  // Only for first balcony
-          const underFrameGeo = new THREE.BoxGeometry(0.06, underBalconyWindowHeight + 0.08, underBalconyWindowWidth + 0.08);
-          const underWindowFrame = new THREE.Mesh(underFrameGeo, frameMat);
-          underWindowFrame.position.set(facadeX, underBalconyWindowY, 0);
-          underWindowFrame.castShadow = false;  // No shadows on windows
-          underWindowFrame.receiveShadow = false;
-          group.add(underWindowFrame);
+        const doorHeight = 1.8;
+        const doorWidth = 0.7;
+        const doorY = doorHeight / 2;
+        const doorFrameGeo = new THREE.BoxGeometry(0.06, doorHeight + 0.08, doorWidth + 0.08);
+        const doorFrame = new THREE.Mesh(doorFrameGeo, frameMat);
+        doorFrame.position.set(facadeX, doorY, 0);
+        doorFrame.castShadow = false;
+        group.add(doorFrame);
 
-          const underGlassGeo = new THREE.BoxGeometry(0.04, underBalconyWindowHeight, underBalconyWindowWidth);
-          const underWindowLit = Math.random() > 0.5;
-          // No emissive - use bright color only
-          const underWindowMat = materialCache.get('m-yellow');
-          const underWindowGlass = new THREE.Mesh(underGlassGeo, underWindowMat);
-          underWindowGlass.position.set(facadeX + roadDir * 0.03, underBalconyWindowY, 0);
-          underWindowGlass.castShadow = false;  // No shadows on windows
-          underWindowGlass.receiveShadow = false;
-          group.add(underWindowGlass);
-        }
+        const doorGlassGeo = new THREE.BoxGeometry(0.04, doorHeight, doorWidth);
+        const doorGlass = new THREE.Mesh(doorGlassGeo, materialCache.get('m-yellow'));
+        doorGlass.position.set(facadeX + roadDir * 0.03, doorY, 0);
+        doorGlass.castShadow = false;
+        group.add(doorGlass);
       }
 
       // Remove bottom rail to make railing open (no brown background)
