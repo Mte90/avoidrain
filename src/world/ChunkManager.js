@@ -5,6 +5,7 @@ import { CarBuilder } from './CarBuilder.js';
 import { GroundBuilder } from './GroundBuilder.js';
 import { PuddleBuilder } from './PuddleBuilder.js';
 import { StreetLampBuilder } from './StreetLampBuilder.js';
+import { ObstacleBuilder } from './ObstacleBuilder.js';
 import { DifficultyManager } from '../systems/DifficultyManager.js';
 
 const CHUNK_SIZE = 40;
@@ -33,9 +34,11 @@ export class ChunkManager {
     this.carPool = [];
     this.buildingPositions = [];
     this.puddles = [];
+    this.obstacles = [];
     
     this.puddleBuilder = new PuddleBuilder();
     this.lastGeneratedChunkZ = 0;
+    this.obstacleBuilder = new ObstacleBuilder();
     
     // Create global ground immediately in constructor
     this.createGlobalGround();
@@ -89,14 +92,10 @@ export class ChunkManager {
     const endZ = position.z + this.chunkAheadDistance;
     this.currentChunkZ = this.getChunkStart(position.z - this.chunkAheadDistance);
     
-    console.log('[ChunkManager] resize called: playerZ=', position.z, 'currentChunkZ=', this.currentChunkZ, 'endZ=', endZ);
-    
     while (this.currentChunkZ <= endZ) {
-      console.log('[ChunkManager] Spawning chunk at Z=', this.currentChunkZ);
       this.spawnChunk(this.currentChunkZ);
       this.currentChunkZ += CHUNK_SIZE;
     }
-    console.log('[ChunkManager] Done spawning chunks. Active chunks:', this.activeChunks.length);
   }
 
   getChunkStart(z) {
@@ -106,7 +105,7 @@ export class ChunkManager {
   getBalconyConfig() {
     const balconyChance = this.difficultyManager 
       ? this.difficultyManager.getBalconyChance() 
-      : 0.98;
+      : 1.0;
     
     if (this.difficultyManager && this.difficultyManager.getGameTime() < 60) {
       const configs = ['BOTH', 'BOTH', 'BOTH', 'LEFT', 'RIGHT'];
@@ -117,7 +116,7 @@ export class ChunkManager {
       return 'NEITHER';
     }
     
-    const configs = ['BOTH', 'BOTH', 'LEFT', 'RIGHT'];
+    const configs = ['BOTH', 'BOTH', 'BOTH', 'LEFT', 'RIGHT'];
     return configs[Math.floor(Math.random() * configs.length)];
   }
 
@@ -279,6 +278,7 @@ export class ChunkManager {
     this.spawnCarsForChunk(chunk, chunkZ);
     this.spawnStreetLampsForChunk(chunk, chunkZ);
     this.spawnPuddlesForChunk(chunk, chunkZ);
+    this.spawnObstaclesForChunk(chunk, chunkZ);
 
     return chunk;
   }
@@ -288,7 +288,7 @@ export class ChunkManager {
     
     const carSpawnChance = this.difficultyManager 
       ? this.difficultyManager.getCarSpawnChance() 
-      : 0.5;
+      : 0.8;
     
     if (Math.random() < carSpawnChance) {
       const length = CHUNK_SIZE;
@@ -305,49 +305,55 @@ export class ChunkManager {
   spawnStreetLampsForChunk(chunk, chunkZ) {
     const streetLampBuilder = new StreetLampBuilder();
     const length = CHUNK_SIZE;
-    const spawnInterval = 12 + Math.random() * 6;
+    const spawnInterval = 25 + Math.random() * 10;
+    const buildingsInChunk = chunk.userData.buildings || [];
     
     for (let localZ = -length / 2 + 5; localZ < length / 2; localZ += spawnInterval) {
       const worldZ = chunkZ + localZ;
-      const leftLamp = streetLampBuilder.build({ x: -3.5, y: 0, z: 0 });
-      leftLamp.position.z = localZ;
-      leftLamp.traverse((child) => {
-        if (child.isMesh) {
-          child.castShadow = true;
-          child.receiveShadow = true;
-        }
-      });
-      chunk.add(leftLamp);
+      const leftHasBuilding = buildingsInChunk.some(b => b.side === 'left' && worldZ >= b.minZ && worldZ <= b.maxZ);
+      const rightHasBuilding = buildingsInChunk.some(b => b.side === 'right' && worldZ >= b.minZ && worldZ <= b.maxZ);
+      
+      if (!leftHasBuilding) {
+        const leftLamp = streetLampBuilder.build({ x: -3.0, y: 0, z: 0 });
+        leftLamp.position.z = localZ;
+        leftLamp.traverse((child) => {
+          if (child.isMesh) {
+            child.castShadow = true;
+            child.receiveShadow = true;
+          }
+        });
+        chunk.add(leftLamp);
+      }
 
-      const rightLamp = streetLampBuilder.build({ x: 3.5, y: 0, z: 0 });
-      rightLamp.position.z = localZ;
-      rightLamp.traverse((child) => {
-        if (child.isMesh) {
-          child.castShadow = true;
-          child.receiveShadow = true;
-        }
-      });
-      chunk.add(rightLamp);
+      if (!rightHasBuilding) {
+        const rightLamp = streetLampBuilder.build({ x: 3.0, y: 0, z: 0 });
+        rightLamp.position.z = localZ;
+        rightLamp.traverse((child) => {
+          if (child.isMesh) {
+            child.castShadow = true;
+            child.receiveShadow = true;
+          }
+        });
+        chunk.add(rightLamp);
+      }
     }
   }
 
   spawnPuddlesForChunk(chunk, chunkZ) {
     const length = CHUNK_SIZE;
-    const puddleSpawnChance = 0.25;  // Increased from 0.15 (more puddles)
+    const puddleSpawnChance = 0.25;
     
-    for (let z = chunkZ - length / 2; z < chunkZ + length / 2; z += 3) {  // Every 3 units instead of 2
+    for (let z = chunkZ - length / 2; z < chunkZ + length / 2; z += 3) {
       if (Math.random() < puddleSpawnChance) {
-        // Spawn mostly on road, sometimes on sidewalk
-        const spawnOnRoad = Math.random() > 0.3;  // 70% on road, 30% on sidewalk
+        const spawnOnRoad = Math.random() > 0.3;
         let puddleX;
         
         if (spawnOnRoad) {
-          puddleX = (Math.random() - 0.5) * 4.5;  // Road area (-2.25 to 2.25)
+          puddleX = (Math.random() - 0.5) * 4.5;
         } else {
-          // Sidewalk area
           puddleX = Math.random() > 0.5 
-            ? -4.5 / 2 - 3.0 / 2 - 0.5 + Math.random() * 3.0  // Left sidewalk
-            : 4.5 / 2 + 3.0 / 2 - 3.0 + Math.random() * 3.0;  // Right sidewalk
+            ? -4.5 / 2 - 3.0 / 2 - 0.5 + Math.random() * 3.0
+            : 4.5 / 2 + 3.0 / 2 - 3.0 + Math.random() * 3.0;
         }
         
         const puddle = this.puddleBuilder.build({ x: puddleX, y: 0, z: z });
@@ -360,6 +366,33 @@ export class ChunkManager {
         chunk.add(puddle);
         this.puddles.push({ mesh: puddle, chunkZ, lastCollision: 0 });
       }
+    }
+  }
+
+  spawnObstaclesForChunk(chunk, chunkZ) {
+    if (!this.obstacleBuilder) {
+      this.obstacleBuilder = new ObstacleBuilder();
+    }
+    const length = CHUNK_SIZE;
+    const obstacleCount = Math.floor(Math.random() * 2) + 1;
+    const spawnInterval = 12 + Math.random() * 6;
+    
+    for (let i = 0; i < obstacleCount; i++) {
+      const side = Math.random() > 0.5 ? 1 : -1;
+      const sidewalkX = side * 3.5;
+      const lampOffset = (i % 2 === 0) ? spawnInterval / 2 : -spawnInterval / 2;
+      const localZ = (Math.random() - 0.5) * length + lampOffset;
+      
+      const obstacle = this.obstacleBuilder.build({ x: 0, y: 0, z: 0 });
+      obstacle.position.set(sidewalkX, 0.5, localZ);
+      obstacle.traverse((child) => {
+        if (child.isMesh) {
+          child.castShadow = false;
+          child.receiveShadow = false;
+        }
+      });
+      chunk.add(obstacle);
+      this.obstacles.push({ mesh: obstacle, chunkZ });
     }
   }
 
@@ -518,6 +551,21 @@ export class ChunkManager {
     for (let i = this.activeChunks.length - 1; i >= 0; i--) {
       const chunk = this.activeChunks[i];
       if (chunk.position.z < farBehindThreshold) {
+        const removedChunkZ = chunk.position.z;
+        this.buildingPositions = this.buildingPositions.filter(
+          pos => pos.chunkZ !== removedChunkZ
+        );
+        this.puddles = this.puddles.filter(puddle => {
+          if (puddle.chunkZ === removedChunkZ) {
+            puddle.mesh.traverse((child) => {
+              if (child.isMesh && child.geometry) {
+                child.geometry.dispose();
+              }
+            });
+            return false;
+          }
+          return true;
+        });
         this.scene.remove(chunk);
         chunk.visible = false;
         this.chunkPool.push(chunk);
@@ -525,12 +573,11 @@ export class ChunkManager {
       }
     }
 
-    const chunkBehindPlayerThreshold = playerZ + this.chunkRecycleDistance;
     const furthestNeededZ = playerZ - this.chunkAheadDistance;
 
     for (let i = this.activeChunks.length - 1; i >= 0; i--) {
       const chunk = this.activeChunks[i];
-      if (chunk.position.z > chunkBehindPlayerThreshold) {
+      if (chunk.position.z > playerZ + CHUNK_SIZE * 3) {
         const removedChunkZ = chunk.position.z;
         this.buildingPositions = this.buildingPositions.filter(
           pos => pos.chunkZ !== removedChunkZ

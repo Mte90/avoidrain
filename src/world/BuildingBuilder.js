@@ -1,18 +1,12 @@
 import * as THREE from 'three';
 import { materialCache } from '../utils/MaterialCache.js';
 
-// Shared materials - MAX 15 for WebGL shader compatibility
-const COLORS = {
-  GRAY: 0x7A8B99,
-  DARK_GRAY: 0x3a3a3a,
-  LIGHT_GRAY: 0x555555,
-  WHITE: 0xFFFFFF,
-  BLACK: 0x1a1a1a,
-  RED: 0xFF0000,
-  BLUE: 0x3498DB,
-  YELLOW: 0xFFFFCC,
-  METAL: 0xC0C0C0
-};
+const BUILDING_COLORS = [
+  'm-gray', 'm-blue', 'm-accent', 'm-light', 'm-dark',
+  'm-facade-1', 'm-facade-2', 'm-facade-3', 'm-facade-4',
+  'm-facade-5', 'm-facade-6', 'm-facade-7', 'm-facade-8'
+];
+const ACCENT_COLORS = ['m-red', 'm-accent', 'm-yellow', 'm-metal'];
 
 export class BuildingBuilder {
   constructor() {}
@@ -20,13 +14,12 @@ export class BuildingBuilder {
   build(position = { x: 0, y: 0, z: 0 }, width = 2.5, height = 6, depth = 3, hasBalcony = false, side = 'left') {
     const group = new THREE.Group();
 
-    const facadeMat = materialCache.get('m-gray');
-    const facadeAccentMat = materialCache.get('m-blue');
-    const frameMat = materialCache.get('m-dark');
-    const windowMat = materialCache.get('m-yellow');
-    const balconyMat = materialCache.get('m-gray');
-    const balconyRailingMat = materialCache.get('m-metal');
-    const roofMat = materialCache.get('m-black');
+    const facadeMat = materialCache.get(BUILDING_COLORS[Math.floor(Math.random() * BUILDING_COLORS.length)]);
+    const facadeAccentMat = materialCache.get(ACCENT_COLORS[Math.floor(Math.random() * ACCENT_COLORS.length)]);
+    const frameMat = materialCache.get(ACCENT_COLORS[Math.floor(Math.random() * ACCENT_COLORS.length)]);
+    const balconyMat = materialCache.get('m-balcony');
+    const roofMat = materialCache.get('m-dark');
+    const balconyRailingMat = materialCache.get('m-red');
 
     const baseHeight = 0.3;
     const baseGeo = new THREE.BoxGeometry(width, baseHeight, depth);
@@ -48,7 +41,7 @@ export class BuildingBuilder {
     const roadDir = side === 'left' ? 1 : -1;
     const facadeX = roadDir * (width / 2 + 0.01);
     const windowWidth = 0.7;
-    const windowHeight = 1.2;  // Taller, closer to door size
+    const windowHeight = 1.2;
     const numWindowsZ = Math.max(2, Math.floor(depth / 2.5));
     const numWindowsY = Math.max(2, Math.floor(height / 2.0));
     const windowSpacingZ = depth / (numWindowsZ + 1);
@@ -84,93 +77,27 @@ export class BuildingBuilder {
     roof.castShadow = true;
     group.add(roof);
 
-    // Add rooftop elements (AC units, antennas, water tanks)
-    const numElements = 1 + Math.floor(Math.random() * 2); // 1-2 elements
-    for (let i = 0; i < numElements; i++) {
-      const elementRandom = Math.random();
-      
-      if (elementRandom < 0.4) {
-        // AC Unit (40% chance): BoxGeometry 0.6x0.4x0.5
-        const acGeo = new THREE.BoxGeometry(0.6, 0.4, 0.5);
-        const acColor = 0x5A6A78;
-        const acMat = materialCache.get('m-blue');
-        const acUnit = new THREE.Mesh(acGeo, acMat);
-        
-        // Random position on roof surface (60% of roof width/depth)
-        const acX = (Math.random() - 0.5) * (width * 0.6);
-        const acZ = (Math.random() - 0.5) * (depth * 0.6);
-        acUnit.position.set(acX, baseHeight + height + roofHeight / 2 + 0.2, acZ);
-        acUnit.castShadow = true;
-        group.add(acUnit);
-      } else if (elementRandom < 0.65) {
-        // Antenna (25% chance): CylinderGeometry 1.2 units tall with red light
-        const antHeight = 1.2;
-        const antGeo = new THREE.CylinderGeometry(0.03, 0.03, antHeight, 8);
-        const antColor = 0xC0C0C0;
-        const antMat = materialCache.get('m-dark');
-        const antenna = new THREE.Mesh(antGeo, antMat);
-        
-        // Random position on roof surface
-        const antX = (Math.random() - 0.5) * (width * 0.6);
-        const antZ = (Math.random() - 0.5) * (depth * 0.6);
-        antenna.position.set(antX, baseHeight + height + roofHeight / 2 + antHeight / 2, antZ);
-        antenna.castShadow = true;
-        group.add(antenna);
-        
-        // Red blinking light at top
-        const lightGeo = new THREE.SphereGeometry(0.08, 8, 8);
-        const lightColor = 0xFF0000;
-        const lightMat = materialCache.get('m-red');
-        const light = new THREE.Mesh(lightGeo, lightMat);
-        light.position.set(antX, baseHeight + height + roofHeight / 2 + antHeight, antZ);
-        group.add(light);
-        
-        // Store blinking data for animation
-        antenna.userData = { isAntenna: true, light: light, blinkOffset: Math.random() * 100 };
-      } else {
-        // Water Tank (20% chance): CylinderGeometry 0.4x0.8
-        const tankRadius = 0.4;
-        const tankHeight = 0.8;
-        const tankGeo = new THREE.CylinderGeometry(tankRadius, tankRadius, tankHeight, 8);
-        const tankColor = 0x8B9BA8;
-        const tankMat = materialCache.get('m-gray');
-        const waterTank = new THREE.Mesh(tankGeo, tankMat);
-        
-        // Random position on roof surface
-        const tankX = (Math.random() - 0.5) * (width * 0.6);
-        const tankZ = (Math.random() - 0.5) * (depth * 0.6);
-        waterTank.position.set(tankX, baseHeight + height + roofHeight / 2 + tankHeight / 2, tankZ);
-        waterTank.castShadow = true;
-        group.add(waterTank);
-      }
-    }
-
     if (hasBalcony) {
       const balconyProtrusion = 2.5;
-      const balconyLength = 3.0;  // Full sidewalk coverage
-      
-      // Create multiple balconies at different heights
-      const numBalconies = 1 + Math.floor(Math.random() * 2);  // 1-2 balconies per building
-      const balconyFloorY = bottomY + height * 0.4;  // First balcony lower (was 0.8)
+      const balconyLength = 3.0;
+      const numBalconies = 1;
+      const balconyFloorY = bottomY + height * 0.4;
       
       for (let b = 0; b < numBalconies; b++) {
-        const currentBalconyY = balconyFloorY + b * (height / (numBalconies + 1));
+        const currentBalconyY = balconyFloorY;
         const railingHeight = 1.0;
         const postCount = 4;
 
         const balconyX = roadDir * (width / 2 + balconyProtrusion / 2);
 
-        // Floor
         const floorGeo = new THREE.BoxGeometry(balconyProtrusion, 0.12, balconyLength);
-        const floorMat = materialCache.get('m-gray');
+        const floorMat = materialCache.get('m-balcony');
         const floor = new THREE.Mesh(floorGeo, floorMat);
         floor.position.set(balconyX, currentBalconyY, 0);
         floor.castShadow = true;
         floor.receiveShadow = true;
         group.add(floor);
 
-        // Posts (RED)
-        // Posts - RED for visibility
         const postGeo = new THREE.BoxGeometry(0.05, railingHeight, 0.05);
         const postMat = materialCache.get('m-red');
         for (let i = 0; i < postCount; i++) {
@@ -204,7 +131,7 @@ export class BuildingBuilder {
         rightSideRail.castShadow = false;
         group.add(rightSideRail);
 
-        const doorHeight = 1.8;
+        const doorHeight = 2.5;
         const doorWidth = 0.7;
         const doorY = doorHeight / 2;
         const doorFrameGeo = new THREE.BoxGeometry(0.06, doorHeight + 0.08, doorWidth + 0.08);
@@ -219,17 +146,6 @@ export class BuildingBuilder {
         doorGlass.castShadow = false;
         group.add(doorGlass);
       }
-
-      // Remove bottom rail to make railing open (no brown background)
-      // Only top rail + posts for open feel
-    }
-
-    if (Math.random() > 0.4) {
-      const stripWidth = 0.15;
-      const stripGeo = new THREE.BoxGeometry(stripWidth, height * 0.7, 0.08);
-      const strip = new THREE.Mesh(stripGeo, facadeAccentMat);
-      strip.position.set(roadDir * (width / 2 - stripWidth - 0.05), bottomY + height / 2, 0);
-      group.add(strip);
     }
 
     group.position.set(position.x, position.y, position.z);

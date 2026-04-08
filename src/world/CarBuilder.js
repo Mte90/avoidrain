@@ -32,35 +32,35 @@ export class CarBuilder {
     const mirrorMat = materialCache.get('m-car-mirror');
     const housingMat = materialCache.get('m-black');
 
-    const bodyLength = 3.0;
-    const bodyWidth = 1.4;
-    const bodyHeight = 0.6;
+    const bodyLength = 2.2;
+    const bodyWidth = 0.8;
+    const bodyHeight = 1.1;
     const bodyGeo = new THREE.BoxGeometry(bodyLength, bodyHeight, bodyWidth);
     const body = new THREE.Mesh(bodyGeo, bodyMat);
-    body.position.y = 0.4;
+    body.position.y = 0.75;
     body.castShadow = true;
     body.receiveShadow = true;
     group.add(body);
 
-    const cabinLength = 1.6;
-    const cabinWidth = 1.2;
-    const cabinHeight = 0.55;
+    const cabinLength = 1.4;
+    const cabinWidth = 0.7;
+    const cabinHeight = 0.9;
     const cabinGeo = new THREE.BoxGeometry(cabinLength, cabinHeight, cabinWidth);
     const cabin = new THREE.Mesh(cabinGeo, cabinMat);
-    cabin.position.set(-0.2, 0.95, 0.15);
+    cabin.position.set(-0.35, 1.4, 0.1);
     cabin.castShadow = true;
     group.add(cabin);
 
-    const wheelRadius = 0.3;
-    const wheelWidth = 0.22;
+    const wheelRadius = 0.25;
+    const wheelWidth = 0.2;
     const wheelGeo = new THREE.CylinderGeometry(wheelRadius, wheelRadius, wheelWidth, 16);
-    wheelGeo.rotateZ(Math.PI / 2);
+    wheelGeo.rotateX(Math.PI / 2);
 
     const wheelPositions = [
-      { x: -1.0, y: 0.3, z: 0.6 },
-      { x: 1.0, y: 0.3, z: 0.6 },
-      { x: -1.0, y: 0.3, z: -0.6 },
-      { x: 1.0, y: 0.3, z: -0.6 },
+      { x: -0.5, y: 0.55, z: 0.35 },
+      { x: 0.5, y: 0.55, z: 0.35 },
+      { x: -0.5, y: 0.55, z: -0.35 },
+      { x: 0.5, y: 0.55, z: -0.35 },
     ];
 
     for (const pos of wheelPositions) {
@@ -70,58 +70,58 @@ export class CarBuilder {
       group.add(wheel);
 
       const rimGeo = new THREE.CylinderGeometry(wheelRadius * 0.5, wheelRadius * 0.5, wheelWidth + 0.02, 8);
-      rimGeo.rotateZ(Math.PI / 2);
+      rimGeo.rotateX(Math.PI / 2);
       const rim = new THREE.Mesh(rimGeo, rimMat);
       rim.position.set(pos.x, pos.y, pos.z);
       group.add(rim);
     }
 
-    const headlightGeo = new THREE.BoxGeometry(0.2, 0.15, 0.1);
+    const headlightGeo = new THREE.BoxGeometry(0.15, 0.1, 0.08);
     const leftHeadlight = new THREE.Mesh(headlightGeo, headlightMat);
-    leftHeadlight.position.set(-1.3, 0.4, 0.45);
+    leftHeadlight.position.set(-1.1, 0.8, 0.4);
     group.add(leftHeadlight);
 
     const rightHeadlight = new THREE.Mesh(headlightGeo, headlightMat);
-    rightHeadlight.position.set(-1.3, 0.4, -0.45);
+    rightHeadlight.position.set(-1.1, 0.8, -0.4);
     group.add(rightHeadlight);
 
-    const housingGeo = new THREE.BoxGeometry(0.25, 0.2, 0.15);
+    const housingGeo = new THREE.BoxGeometry(0.2, 0.15, 0.08);
     const leftHousing = new THREE.Mesh(housingGeo, housingMat);
-    leftHousing.position.set(-1.3, 0.4, 0.45);
+    leftHousing.position.set(-1.1, 0.8, 0.4);
     group.add(leftHousing);
 
     const rightHousing = new THREE.Mesh(housingGeo, housingMat);
-    rightHousing.position.set(-1.3, 0.4, -0.45);
+    rightHousing.position.set(-1.1, 0.8, -0.4);
     group.add(rightHousing);
 
-    const taillightGeo = new THREE.BoxGeometry(0.08, 0.15, 0.25);
+    const taillightGeo = new THREE.BoxGeometry(0.06, 0.1, 0.15);
     const leftTaillight = new THREE.Mesh(taillightGeo, taillightMat);
-    leftTaillight.position.set(1.3, 0.4, 0.35);
+    leftTaillight.position.set(1.1, 0.8, 0.3);
     group.add(leftTaillight);
 
     const rightTaillight = new THREE.Mesh(taillightGeo, taillightMat);
-    rightTaillight.position.set(1.3, 0.4, -0.35);
+    rightTaillight.position.set(1.1, 0.8, -0.3);
     group.add(rightTaillight);
 
-    const bumperGeo = new THREE.BoxGeometry(0.15, 0.25, bodyWidth - 0.15);
+    const bumperGeo = new THREE.BoxGeometry(0.15, 0.2, bodyWidth - 0.15);
     const frontBumper = new THREE.Mesh(bumperGeo, bumperMat);
-    frontBumper.position.set(-1.5, 0.25, 0);
+    frontBumper.position.set(-1.2, 0.45, 0);
     frontBumper.castShadow = true;
     group.add(frontBumper);
 
     const rearBumper = new THREE.Mesh(bumperGeo, bumperMat);
-    rearBumper.position.set(1.5, 0.25, 0);
+    rearBumper.position.set(1.2, 0.45, 0);
     rearBumper.castShadow = true;
     group.add(rearBumper);
 
     const mirrorGeo = new THREE.BoxGeometry(0.1, 0.1, 0.15);
     
     const leftMirror = new THREE.Mesh(mirrorGeo, mirrorMat);
-    leftMirror.position.set(-0.8, 0.75, 0.55);
+    leftMirror.position.set(-0.7, 0.9, 0.55);
     group.add(leftMirror);
 
     const rightMirror = new THREE.Mesh(mirrorGeo, mirrorMat);
-    rightMirror.position.set(-0.8, 0.75, -0.55);
+    rightMirror.position.set(-0.7, 0.9, -0.55);
     group.add(rightMirror);
 
     group.position.set(position.x, position.y, position.z);

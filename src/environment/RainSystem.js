@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 
-const RAIN_COUNT = 5000;  // Drastically reduced to save texture units
+const RAIN_COUNT = 3000;
 const VOLUME_WIDTH = 60;
 const VOLUME_HEIGHT = 40;
 const VOLUME_DEPTH = 60;

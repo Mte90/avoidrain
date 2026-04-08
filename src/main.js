@@ -41,22 +41,17 @@ export class Game {
     this.renderer.shadowMap.enabled = false;
     document.getElementById('canvas-container').appendChild(this.renderer.domElement);
 
-    this.ambientLight = new THREE.AmbientLight(0xffffff, 0.55);
+    this.ambientLight = new THREE.AmbientLight(0xffffff, 0.75);
     this.scene.add(this.ambientLight);
 
     const directionalLight = new THREE.DirectionalLight(0xfff5e6, 1.0);
     directionalLight.position.set(10, 15, 10);
-    directionalLight.castShadow = true;
-    directionalLight.shadow.mapSize.width = 1024;
-    directionalLight.shadow.mapSize.height = 1024;
-    directionalLight.shadow.camera.near = 0.5;
-    directionalLight.shadow.camera.far = 80;
-    directionalLight.shadow.camera.left = -30;
-    directionalLight.shadow.camera.right = 30;
-    directionalLight.shadow.camera.top = 30;
-    directionalLight.shadow.camera.bottom = -30;
-    directionalLight.shadow.bias = -0.0001;
     this.scene.add(directionalLight);
+
+    // Additional fill light for better building visibility
+    const fillLight = new THREE.DirectionalLight(0xffffff, 0.4);
+    fillLight.position.set(-10, 10, -10);
+    this.scene.add(fillLight);
 
     // Rimosso HemisphereLight per ridurre complessità shader su mobile
     // const hemisphereLight = new THREE.HemisphereLight(0x87CEEB, 0x8B7355, 0.3);
@@ -231,6 +226,7 @@ export class Game {
 
     if (state === GameState.MENU) {
       this.menuDemoManager.update(delta);
+      this.rainSystem.update(delta);
     }
 
     const playerPos = this.player.getPosition();

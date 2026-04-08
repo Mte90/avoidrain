@@ -8,17 +8,25 @@ export class MaterialCache {
 
   init() {
     const list = [
-      // Building materials
-      ['m-gray', 0x7A8B99, 0.7, 0.1],
+      ['m-gray', 0x999999, 0.5, 0.05],
       ['m-dark', 0x2C2C2C, 0.8, 0.1],
       ['m-light', 0x959595, 0.9, 0.02],
       ['m-black', 0x1A1A1A, 0.9, 0.1],
       ['m-white', 0xFFFFFF, 0.9, 0.02],
       ['m-blue', 0x3498DB, 0.5, 0.3],
+      ['m-accent', 0xD2691E, 0.5, 0.3],
       ['m-metal', 0xC0C0C0, 0.3, 0.8],
       ['m-yellow', 0xFFFF99, 0.3, 0.0, 0xFFFF00, 0.8],
       ['m-red', 0x8B0000, 0.3, 0.3],
       ['m-purple', 0x667eea, 0.2, 0.8],
+      ['m-facade-1', 0x8B7355, 0.6, 0.1],
+      ['m-facade-2', 0x6B8E23, 0.6, 0.1],
+      ['m-facade-3', 0x4682B4, 0.6, 0.1],
+      ['m-facade-4', 0x556B2F, 0.6, 0.1],
+      ['m-facade-5', 0xA0522D, 0.6, 0.1],
+      ['m-facade-6', 0x708090, 0.6, 0.1],
+      ['m-facade-7', 0x808080, 0.6, 0.1],
+      ['m-facade-8', 0x20B2AA, 0.6, 0.1],
       // Car materials
       ['m-car-body', 0x4A5568, 0.4, 0.6],
       ['m-car-taillight', 0xDC2626, 0.8, 0.3],
@@ -94,26 +102,21 @@ export class MaterialCache {
       return baseMat;
     }
     
+    // Always return a clone to prevent shared material references
+    const clonedMat = baseMat.clone();
+    
     // Apply overrides by cloning material with new parameters
     if (Object.keys(overrides).length > 0) {
-      const overrideKey = `${key}:${JSON.stringify(overrides)}`;
-      const cachedOverride = this.cache.get(overrideKey);
-      if (cachedOverride) return cachedOverride;
-      
-      const overrideMat = baseMat.clone();
-      if (overrides.color !== undefined) overrideMat.color.setHex(overrides.color);
-      if (overrides.roughness !== undefined) overrideMat.roughness = overrides.roughness;
-      if (overrides.metalness !== undefined) overrideMat.metalness = overrides.metalness;
-      if (overrides.emissive !== undefined) overrideMat.emissive.setHex(overrides.emissive);
-      if (overrides.emissiveIntensity !== undefined) overrideMat.emissiveIntensity = overrides.emissiveIntensity;
-      if (overrides.transparent !== undefined) overrideMat.transparent = overrides.transparent;
-      if (overrides.opacity !== undefined) overrideMat.opacity = overrides.opacity;
-      
-      this.cache.set(overrideKey, overrideMat);
-      return overrideMat;
+      if (overrides.color !== undefined) clonedMat.color.setHex(overrides.color);
+      if (overrides.roughness !== undefined) clonedMat.roughness = overrides.roughness;
+      if (overrides.metalness !== undefined) clonedMat.metalness = overrides.metalness;
+      if (overrides.emissive !== undefined) clonedMat.emissive.setHex(overrides.emissive);
+      if (overrides.emissiveIntensity !== undefined) clonedMat.emissiveIntensity = overrides.emissiveIntensity;
+      if (overrides.transparent !== undefined) clonedMat.transparent = overrides.transparent;
+      if (overrides.opacity !== undefined) clonedMat.opacity = overrides.opacity;
     }
     
-    return baseMat;
+    return clonedMat;
   }
 
   dispose() {

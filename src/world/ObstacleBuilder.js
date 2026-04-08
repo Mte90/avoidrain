@@ -17,11 +17,7 @@ export class ObstacleBuilder {
     const group = new THREE.Group();
     
     const canColor = TRASH_CAN_COLORS[Math.floor(Math.random() * TRASH_CAN_COLORS.length)];
-    const canMat = materialCache.get(`trash-can-${canColor}-0.4-0.3`, { 
-      color: canColor, 
-      roughness: 0.4, 
-      metalness: 0.3 
-    });
+    const canMat = materialCache.get('m-gray');
     
     // Main cylinder body
     const bodyRadius = 0.35;
@@ -50,10 +46,7 @@ export class ObstacleBuilder {
     // Lid
     const lidRadius = bodyRadius * 1.1;
     const lidGeo = new THREE.CylinderGeometry(lidRadius, lidRadius, 0.1, 16);
-    const lidMat = materialCache.get('trash-lid-0x111111-0.9-0.0', { 
-      color: 0x111111,  // Darker lid
-      roughness: 0.9 
-    });
+    const lidMat = materialCache.get('m-dark');
     const lid = new THREE.Mesh(lidGeo, lidMat);
     lid.position.y = bodyHeight + 0.05;
     lid.castShadow = true;
@@ -72,17 +65,8 @@ export class ObstacleBuilder {
     const group = new THREE.Group();
     
     const woodColor = BENCH_BACK_COLORS[Math.floor(Math.random() * BENCH_BACK_COLORS.length)];
-    const woodMat = materialCache.get(`bench-wood-${woodColor}-0.9-0.1`, { 
-      color: woodColor, 
-      roughness: 0.9, 
-      metalness: 0.1 
-    });
-    const metalColor = 0x333333;
-    const metalMat = materialCache.get(`bench-metal-${metalColor}-0.6-0.7`, { 
-      color: metalColor, 
-      roughness: 0.6, 
-      metalness: 0.7 
-    });
+    const woodMat = materialCache.get('m-accent');
+    const metalMat = materialCache.get('m-dark');
     
     const benchWidth = 2.5;
     const benchHeight = 0.5;
@@ -162,18 +146,8 @@ export class ObstacleBuilder {
   buildSign(position = { x: 0, y: 0, z: 0 }) {
     const group = new THREE.Group();
     
-    const signColor = SIGN_SIGNS[Math.floor(Math.random() * SIGN_SIGNS.length)];
-    const signMat = materialCache.get(`sign-${signColor}-0.3-0.2`, { 
-      color: signColor, 
-      roughness: 0.3, 
-      metalness: 0.2 
-    });
-    const poleColor = 0x2a2a2a;
-    const poleMat = materialCache.get(`sign-pole-${poleColor}-0.8-0.5`, { 
-      color: poleColor, 
-      roughness: 0.8, 
-      metalness: 0.5 
-    });
+    const signMat = materialCache.get('m-yellow');
+    const poleMat = materialCache.get('m-dark');
     
     const poleHeight = 3.0;
     const poleRadius = 0.12;

@@ -50,6 +50,11 @@ export class MenuDemoManager {
 
     this.currentZ -= this.demoSpeed * delta;
     this.player.getGroup().position.z = this.currentZ;
+    
+    if (this.currentZ < -100) {
+      this.currentZ = 20;
+      this.player.getGroup().position.z = 20;
+    }
 
     this.camera.position.x = this.player.getGroup().position.x * 0.3;
     this.camera.position.z = this.player.getGroup().position.z + 8;
