@@ -7,38 +7,18 @@ const LINE_COLOR = 0xFFFFFF;
 const CURB_COLORS = [0x666666, 0x777777, 0x6A6A6A];
 
 export class GroundBuilder {
-  constructor() {
-    // Use cached materials - colors mutated per-build
-    this.sidingMat = materialCache.get('m-light', {
-      color: SIDING_COLORS[0],
-      roughness: 0.95,
-      metalness: 0.02
-    });
-    this.roadMat = materialCache.get('m-dark', {
-      color: ROAD_COLOR,
-      roughness: 0.85,
-      metalness: 0.05
-    });
-    this.lineMat = materialCache.get('m-white', {
-      color: LINE_COLOR,
-      roughness: 0.9,
-      metalness: 0.02
-    });
-    this.curbMat = materialCache.get('m-gray', {
-      color: CURB_COLORS[0],
-      roughness: 0.9,
-      metalness: 0.05
-    });
-  }
-
   build(position = { x: 0, y: 0, z: 0 }, sidewalkWidth = 2, roadWidth = 3, length = 40) {
     const group = new THREE.Group();
 
+    // Get materials with random colors per-build (no mutation of shared materials)
     const sidewalkColor = SIDING_COLORS[Math.floor(Math.random() * SIDING_COLORS.length)];
-    this.sidingMat.color.setHex(sidewalkColor);
+    const sidingMat = materialCache.get('m-light');
 
     const curbColor = CURB_COLORS[Math.floor(Math.random() * CURB_COLORS.length)];
-    this.curbMat.color.setHex(curbColor);
+    const curbMat = materialCache.get('m-gray');
+
+    const roadMat = materialCache.get('m-road');
+    const lineMat = materialCache.get('m-white');
 
     const roadY = 0;
     const sidewalkY = 0;
@@ -164,11 +144,4 @@ export class GroundBuilder {
     return group;
   }
 
-  updateWetness(rainIntensity) {
-    const sidewalkRoughnessReduction = 0.35;
-    const roadRoughnessReduction = 0.3;
-    
-    this.sidingMat.roughness = this.baseSidewalkRoughness - (rainIntensity * sidewalkRoughnessReduction);
-    this.roadMat.roughness = this.baseRoadRoughness - (rainIntensity * roadRoughnessReduction);
-  }
 }

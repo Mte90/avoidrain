@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { materialCache } from '../utils/MaterialCache.js';
 
 export class BackdropBuilder {
   constructor() {
@@ -29,12 +30,7 @@ export class BackdropBuilder {
   }
 
   _createBuilding(x, height, width, depth) {
-    const material = new THREE.MeshStandardMaterial({ 
-      color: 0x3a3a3a, 
-      roughness: 0.8, 
-      metalness: 0.1,
-      opacity: 1.0
-    });
+    const material = materialCache.get('m-backdrop');
     const geometry = new THREE.BoxGeometry(width, height, depth);
     const building = new THREE.Mesh(geometry, material);
 

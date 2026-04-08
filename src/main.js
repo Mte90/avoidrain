@@ -1,16 +1,20 @@
 import * as THREE from 'three';
 import { InputManager } from './input/InputManager.js';
 import { GameState, GameStateMachine } from './systems/GameState.js';
+import { WetMeter } from './systems/WetMeter.js';
 import { PlayerController } from './player/PlayerController.js';
 import { ChunkManager } from './world/ChunkManager.js';
 import { RainSystem } from './environment/RainSystem.js';
 import { audioManager } from './audio/AudioManager.js';
-import { WetMeter } from './systems/WetMeter.js';
+import { PowerUpManager } from './items/PowerUpManager.js';
 import { DifficultyManager } from './systems/DifficultyManager.js';
 import { ScoreManager } from './systems/ScoreManager.js';
 import { UIManager } from './ui/UIManager.js';
 import { BackdropBuilder } from './world/BackdropBuilder.js';
+import { JuiceSystem } from './systems/JuiceSystem.js';
+import { ObstacleManager } from './items/ObstacleManager.js';
 import { PortalManager } from './utils/PortalManager.js';
+import { MenuDemoManager } from './systems/MenuDemoManager.js';
 
 export class Game {
   constructor() {
@@ -65,7 +69,7 @@ export class Game {
     this.audioManager = audioManager;
     this.uiManager = new UIManager();
 
-    this.player = new PlayerController(this.input);
+    this.player = new PlayerController(this.input, this.difficultyManager);
     this.player.setCamera(this.camera);
     this.scene.add(this.player.getGroup());
 
@@ -77,7 +81,11 @@ export class Game {
     this.rainSystem.setDifficultyManager(this.difficultyManager);
 
     this.wetMeter = new WetMeter(this.gameState);
+    this.powerUpManager = new PowerUpManager(this.scene, this.player, this.wetMeter, this.difficultyManager);
     this.portalManager = new PortalManager();
+    this.juiceSystem = new JuiceSystem(this.scene);
+    this.obstacleManager = new ObstacleManager(this.scene);
+    this.menuDemoManager = new MenuDemoManager(this.player, this.camera, this.chunkManager, this.difficultyManager);
 
     // Check for portal params from previous game
     this.portalParams = PortalManager.getPortalParams();
@@ -96,7 +104,9 @@ export class Game {
     this.setupEventListeners();
     this.uiManager.init();
     this.uiManager.updateGameState('MENU');
-
+    
+    this.menuDemoManager.start();
+    
     this.audioManager.init();
   }
 
@@ -141,6 +151,7 @@ export class Game {
   startGame() {
     this.gameState.startPlaying();
     this.resetGame();
+    this.menuDemoManager.stop();
     this.audioManager.playRain();
     this.audioManager.startFootsteps();
   }
@@ -149,6 +160,7 @@ export class Game {
     this.gameState.reset();
     this.resetGame();
     this.gameState.startPlaying();
+    this.menuDemoManager.stop();
     this.audioManager.playRain();
     this.audioManager.startFootsteps();
   }
@@ -212,9 +224,16 @@ export class Game {
   update(delta) {
     const state = this.gameState.getState();
 
-    const playerPos = this.player.getPosition();
-    
     this.portalManager.update(delta);
+    
+    // Animate antenna blinking lights
+    this.animateAntennas(delta);
+
+    if (state === GameState.MENU) {
+      this.menuDemoManager.update(delta);
+    }
+
+    const playerPos = this.player.getPosition();
     
     // Make directional light follow player for shadows
     const directionalLight = this.scene.children.find(child => child.isDirectionalLight);
@@ -225,9 +244,8 @@ export class Game {
     }
     
     this.rainSystem.setPlayerPosition(playerPos.x, playerPos.y, playerPos.z);
-    
-    // Animate antenna blinking lights
-    this.animateAntennas(delta);
+
+    this.chunkManager.updateCars(delta);
 
     if (state === GameState.PLAYING) {
       this.gameTime += delta;
@@ -235,8 +253,6 @@ export class Game {
       this.difficultyManager.update(delta);
       this.player.update(delta, this.chunkManager);
       this.chunkManager.update(playerPos.z);
-      this.chunkManager.groundBuilder.updateWetness(this.difficultyManager.getRainIntensity());
-      this.chunkManager.updateCars(delta);
       this.rainSystem.update(delta);
 
       this.backdropBuilder.updateBuildingPositions(this.backdrop, playerPos.z);
@@ -249,6 +265,7 @@ export class Game {
       if (wasHit) {
         this.audioManager.playSplash();
         this.audioManager.playHorn();
+        this.juiceSystem.addScreenShake(0.3);
       }
 
       const pushback = this.wetMeter.getPushbackVelocity();
@@ -260,6 +277,14 @@ export class Game {
       this.scoreManager.update(delta, this.wetMeter.getIsUnderShelter());
 
       this.player.setHairWetness(this.wetMeter.getWetMeter());
+      
+      this.powerUpManager.update(delta, playerPos);
+      this.juiceSystem.update(delta);
+      
+      const obstaclePushback = this.obstacleManager.update(playerPos.z);
+      if (obstaclePushback !== 0) {
+        this.juiceSystem.addScreenShake(0.2);
+      }
 
       if (this.gameState.getState() === GameState.GAME_OVER) {        this.handleGameOver();
       }
@@ -276,6 +301,8 @@ export class Game {
   }
 
   render() {
+    const baseCameraPos = this.camera.position.clone();
+    this.juiceSystem.applyCameraShake(this.camera, baseCameraPos);
     this.renderer.render(this.scene, this.camera);
   }
 

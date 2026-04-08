@@ -514,6 +514,17 @@ export class ChunkManager {
   update(playerZ) {
     this.playerZ = playerZ;
 
+    const farBehindThreshold = playerZ - 200;
+    for (let i = this.activeChunks.length - 1; i >= 0; i--) {
+      const chunk = this.activeChunks[i];
+      if (chunk.position.z < farBehindThreshold) {
+        this.scene.remove(chunk);
+        chunk.visible = false;
+        this.chunkPool.push(chunk);
+        this.activeChunks.splice(i, 1);
+      }
+    }
+
     const chunkBehindPlayerThreshold = playerZ + this.chunkRecycleDistance;
     const furthestNeededZ = playerZ - this.chunkAheadDistance;
 
@@ -524,6 +535,17 @@ export class ChunkManager {
         this.buildingPositions = this.buildingPositions.filter(
           pos => pos.chunkZ !== removedChunkZ
         );
+        this.puddles = this.puddles.filter(puddle => {
+          if (puddle.chunkZ === removedChunkZ) {
+            puddle.mesh.traverse((child) => {
+              if (child.isMesh && child.geometry) {
+                child.geometry.dispose();
+              }
+            });
+            return false;
+          }
+          return true;
+        });
         this.scene.remove(chunk);
         this.chunkPool.push(chunk);
         this.activeChunks.splice(i, 1);

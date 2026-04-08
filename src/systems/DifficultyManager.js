@@ -5,11 +5,13 @@ const DIFFICULTY_RAMP_TIME = 60; // seconds to reach max difficulty
 const INITIAL_RAIN_INTENSITY = 0.5;
 const INITIAL_BALCONY_CHANCE = 0.95;
 const INITIAL_CAR_SPAWN_CHANCE = 0.2;
+const INITIAL_PLAYER_SPEED = 5.0; // meters per second
 
 // Target values (at t=60s)
 const MAX_RAIN_INTENSITY = 1.0;
 const MIN_BALCONY_CHANCE = 0.6;
 const MAX_CAR_SPAWN_CHANCE = 0.6;
+const MAX_PLAYER_SPEED = 8.0; // 60% faster
 
 /**
  * Linear interpolation between start and end values
@@ -80,8 +82,14 @@ export class DifficultyManager {
   }
 
   /**
+   * Get current player speed (5.0 → 8.0 m/s over 60s)
+   */
+  getPlayerSpeed() {
+    return lerp(INITIAL_PLAYER_SPEED, MAX_PLAYER_SPEED, this.difficulty);
+  }
+
+  /**
    * Get game time in seconds
-   * @returns {number} Total elapsed game time
    */
   getGameTime() {
     return this.gameTime;

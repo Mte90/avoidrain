@@ -37,7 +37,7 @@ export class CharacterBuilder {
     const headGeo = new THREE.SphereGeometry(headSize, 12, 12);
     const head = new THREE.Mesh(headGeo, skinMat);
     head.position.y = hipY + torsoHeight + headSize - 0.05;
-    head.castShadow = true;
+    head.castShadow = false;
     group.add(head);
 
     const hairGeo = new THREE.SphereGeometry(headSize * 1.15, 16, 16, 0, Math.PI * 2, 0, Math.PI / 1.8);
@@ -52,12 +52,12 @@ export class CharacterBuilder {
     
     const leftUpperArm = new THREE.Mesh(armGeo, shirtMat);
     leftUpperArm.position.set(-0.5, 1.3, 0);
-    leftUpperArm.castShadow = true;
+    leftUpperArm.castShadow = false;
     group.add(leftUpperArm);
 
     const rightUpperArm = new THREE.Mesh(armGeo, shirtMat);
     rightUpperArm.position.set(0.5, 1.3, 0);
-    rightUpperArm.castShadow = true;
+    rightUpperArm.castShadow = false;
     group.add(rightUpperArm);
 
     const forearmLength = 0.5;
@@ -65,12 +65,12 @@ export class CharacterBuilder {
     
     const leftForearm = new THREE.Mesh(forearmGeo, skinMat);
     leftForearm.position.set(-0.5, 0.75, 0);
-    leftForearm.castShadow = true;
+    leftForearm.castShadow = false;
     group.add(leftForearm);
 
     const rightForearm = new THREE.Mesh(forearmGeo, skinMat);
     rightForearm.position.set(0.5, 0.75, 0);
-    rightForearm.castShadow = true;
+    rightForearm.castShadow = false;
     group.add(rightForearm);
 
     const handGeo = new THREE.SphereGeometry(0.11, 8, 8);
@@ -78,12 +78,12 @@ export class CharacterBuilder {
     
     const leftHand = new THREE.Mesh(handGeo, skinMat);
     leftHand.position.set(-0.5, 0.25, 0);
-    leftHand.castShadow = true;
+    leftHand.castShadow = false;
     group.add(leftHand);
 
     const rightHand = new THREE.Mesh(handGeo, skinMat);
     rightHand.position.set(0.5, 0.25, 0);
-    rightHand.castShadow = true;
+    rightHand.castShadow = false;
     group.add(rightHand);
 
     const legLength = 0.9;
@@ -95,13 +95,13 @@ export class CharacterBuilder {
     leftLegGroup.name = 'leftLeg';
     leftLegGroup.position.set(-0.22, hipY, 0);
     const leftThigh = new THREE.Mesh(legGeo, pantsMat);
-    leftThigh.castShadow = true;
+    leftThigh.castShadow = false;
     leftLegGroup.add(leftThigh);
     
     const footGeo = new THREE.BoxGeometry(0.12, 0.12, 0.22);
     const leftFoot = new THREE.Mesh(footGeo, shoeMat);
     leftFoot.position.set(0, -legLength, 0.02);
-    leftFoot.castShadow = true;
+    leftFoot.castShadow = false;
     leftLegGroup.add(leftFoot);
     
     group.add(leftLegGroup);
@@ -110,19 +110,20 @@ export class CharacterBuilder {
     rightLegGroup.name = 'rightLeg';
     rightLegGroup.position.set(0.22, hipY, 0);
     const rightThigh = new THREE.Mesh(legGeo, pantsMat);
-    rightThigh.castShadow = true;
+    rightThigh.castShadow = false;
     rightLegGroup.add(rightThigh);
     
     const rightFoot = new THREE.Mesh(footGeo, shoeMat);
     rightFoot.position.set(0, -legLength, 0.02);
-    rightFoot.castShadow = true;
+    rightFoot.castShadow = false;
     rightLegGroup.add(rightFoot);
     
     group.add(rightLegGroup);
 
     group.position.set(position.x, position.y, position.z);
-    // Store hair mesh reference for wetness effect
     group.userData.hairMesh = hair;
+    group.userData.leftLeg = leftLegGroup;
+    group.userData.rightLeg = rightLegGroup;
     return group;
   }
 

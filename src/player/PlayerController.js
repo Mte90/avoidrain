@@ -2,8 +2,9 @@ import * as THREE from 'three';
 import { CharacterBuilder } from './CharacterBuilder.js';
 
 export class PlayerController {
-  constructor(inputManager) {
+  constructor(inputManager, difficultyManager = null) {
     this.input = inputManager;
+    this.difficultyManager = difficultyManager;
     
     this.LEFT_SIDE = -3.5;
     this.RIGHT_SIDE = 3.5;
@@ -12,7 +13,8 @@ export class PlayerController {
     this.currentSide = false;
     
     // Player speed
-    this.speed = 8.0;
+    this.baseSpeed = 8.0;
+    this.speed = this.baseSpeed;
     this.obstacles = [];
     
     // Lane transition
@@ -90,6 +92,11 @@ export class PlayerController {
         this.isTransitioning = false;
         this.group.position.x = this.targetX;
       }
+    }
+    
+    // Update speed from difficulty manager if available
+    if (this.difficultyManager) {
+      this.speed = this.difficultyManager.getPlayerSpeed();
     }
     
     // Auto-forward movement

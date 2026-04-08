@@ -20,6 +20,7 @@ export class WetMeter {
     this.gameState = gameState;
     this.wetMeter = 0;
     this.isUnderShelter = false;
+    this.isShielded = false;
     this.lastCarHitTime = 0;
     this.carHitCooldown = 1.0;
     this.pushbackVelocity = 0;
@@ -186,10 +187,21 @@ export class WetMeter {
   getIsUnderShelter() {
     return this.isUnderShelter;
   }
+  
+  setShielded(shielded) {
+    this.isShielded = shielded;
+  }
+  
+  reduceWetness(percent) {
+    if (!this.isShielded) {
+      this.wetMeter = Math.max(0, this.wetMeter - percent);
+    }
+  }
 
   reset() {
     this.wetMeter = 0;
     this.isUnderShelter = false;
+    this.isShielded = false;
     this.pushbackVelocity = 0;
     this.lastCarHitTime = 0;
   }

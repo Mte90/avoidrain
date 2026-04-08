@@ -61,7 +61,9 @@ export class MaterialCache {
       ['shoes', 0x1A1A1A, 0.6, 0.2],
       ['m-eye', 0xFFFFFF, 0.3, 0.0],
       ['m-pupil', 0x000000, 0.9, 0.0],
-      ['puddle', 0x5a6a7a, 0.05, 0.95],
+      ['m-backdrop', 0x3a3a3a, 0.8, 0.1],
+      ['puddle', 0x5a6a7a, 0.02, 0.95],
+      ['m-white', 0xFFFFFF, 0.9, 0.02],
       ['m-portal', 0x9333EA, 0.4, 0.8],
       // Emissive materials (essential lights only)
       ['m-emissive-yellow', 0xFFFF00, 1.0, 0.0, 0x887700, 0.5],
@@ -90,6 +92,25 @@ export class MaterialCache {
     if (!baseMat) {
       console.warn(`MaterialCache: Unknown key '${key}'`);
       return baseMat;
+    }
+    
+    // Apply overrides by cloning material with new parameters
+    if (Object.keys(overrides).length > 0) {
+      const overrideKey = `${key}:${JSON.stringify(overrides)}`;
+      const cachedOverride = this.cache.get(overrideKey);
+      if (cachedOverride) return cachedOverride;
+      
+      const overrideMat = baseMat.clone();
+      if (overrides.color !== undefined) overrideMat.color.setHex(overrides.color);
+      if (overrides.roughness !== undefined) overrideMat.roughness = overrides.roughness;
+      if (overrides.metalness !== undefined) overrideMat.metalness = overrides.metalness;
+      if (overrides.emissive !== undefined) overrideMat.emissive.setHex(overrides.emissive);
+      if (overrides.emissiveIntensity !== undefined) overrideMat.emissiveIntensity = overrides.emissiveIntensity;
+      if (overrides.transparent !== undefined) overrideMat.transparent = overrides.transparent;
+      if (overrides.opacity !== undefined) overrideMat.opacity = overrides.opacity;
+      
+      this.cache.set(overrideKey, overrideMat);
+      return overrideMat;
     }
     
     return baseMat;

@@ -14,7 +14,7 @@ export class PuddleBuilder {
     
     const puddle = new THREE.Mesh(geometry, material);
     puddle.rotation.x = -Math.PI / 2;
-    puddle.position.set(x, y + 0.02, z);
+    puddle.position.set(x, y + 0.15, z);
     puddle.castShadow = false;
     puddle.receiveShadow = false;
     puddle.userData = { type: 'puddle' };

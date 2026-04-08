@@ -24,17 +24,27 @@ export class StreetLampBuilder {
     const headMat = materialCache.get('m-emissive-yellow');
     const head = new THREE.Mesh(headGeo, headMat);
     head.position.set(0, poleHeight + headHeight / 2, 0);
-    head.castShadow = true;
+    head.castShadow = false;
     head.receiveShadow = true;
     group.add(head);
 
-    const pointLight = new THREE.PointLight(0xFFAA44, 1.0, 12);
+    const pointLight = new THREE.PointLight(0xFFAA44, 1.5, 15);
     pointLight.position.set(0, poleHeight + 0.3, 0);
-    pointLight.castShadow = true;
+    pointLight.castShadow = false;
     pointLight.shadow.mapSize.width = 256;
     pointLight.shadow.mapSize.height = 256;
     pointLight.shadow.bias = -0.0001;
     group.add(pointLight);
+
+    const spotLight = new THREE.SpotLight(0xFFDD88, 0.8);
+    spotLight.position.set(0, poleHeight + 0.5, 0);
+    spotLight.target.position.set(0, 0, 0);
+    spotLight.angle = Math.PI / 6;
+    spotLight.penumbra = 0.3;
+    spotLight.distance = 10;
+    spotLight.castShadow = false;
+    group.add(spotLight);
+    group.add(spotLight.target);
 
     const baseHeight = 0.2;
     const baseRadius = 0.3;

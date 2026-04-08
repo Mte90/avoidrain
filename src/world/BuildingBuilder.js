@@ -93,7 +93,7 @@ export class BuildingBuilder {
         // AC Unit (40% chance): BoxGeometry 0.6x0.4x0.5
         const acGeo = new THREE.BoxGeometry(0.6, 0.4, 0.5);
         const acColor = 0x5A6A78;
-        const acMat = materialCache.get('m-blue', { color: acColor, roughness: 0.7, metalness: 0.3 });  // Share blue material
+        const acMat = materialCache.get('m-blue');
         const acUnit = new THREE.Mesh(acGeo, acMat);
         
         // Random position on roof surface (60% of roof width/depth)
@@ -107,7 +107,7 @@ export class BuildingBuilder {
         const antHeight = 1.2;
         const antGeo = new THREE.CylinderGeometry(0.03, 0.03, antHeight, 8);
         const antColor = 0xC0C0C0;
-        const antMat = materialCache.get('m-dark', { color: antColor, roughness: 0.6, metalness: 0.4 });  // Share dark material
+        const antMat = materialCache.get('m-dark');
         const antenna = new THREE.Mesh(antGeo, antMat);
         
         // Random position on roof surface
@@ -120,7 +120,7 @@ export class BuildingBuilder {
         // Red blinking light at top
         const lightGeo = new THREE.SphereGeometry(0.08, 8, 8);
         const lightColor = 0xFF0000;
-        const lightMat = materialCache.get('m-red', { color: 0xFF0000, roughness: 0.5 });  // Share red material
+        const lightMat = materialCache.get('m-red');
         const light = new THREE.Mesh(lightGeo, lightMat);
         light.position.set(antX, baseHeight + height + roofHeight / 2 + antHeight, antZ);
         group.add(light);
@@ -133,7 +133,7 @@ export class BuildingBuilder {
         const tankHeight = 0.8;
         const tankGeo = new THREE.CylinderGeometry(tankRadius, tankRadius, tankHeight, 8);
         const tankColor = 0x8B9BA8;
-        const tankMat = materialCache.get('m-gray', { color: tankColor, roughness: 0.8, metalness: 0.1 });  // Share gray material
+        const tankMat = materialCache.get('m-gray');
         const waterTank = new THREE.Mesh(tankGeo, tankMat);
         
         // Random position on roof surface
@@ -162,7 +162,7 @@ export class BuildingBuilder {
 
         // Floor
         const floorGeo = new THREE.BoxGeometry(balconyProtrusion, 0.12, balconyLength);
-        const floorMat = materialCache.get('m-gray', { color: 0x5A5A5A, roughness: 0.85, metalness: 0.15 });
+        const floorMat = materialCache.get('m-gray');
         const floor = new THREE.Mesh(floorGeo, floorMat);
         floor.position.set(balconyX, currentBalconyY, 0);
         floor.castShadow = true;
@@ -172,12 +172,12 @@ export class BuildingBuilder {
         // Posts (RED)
         // Posts - RED for visibility
         const postGeo = new THREE.BoxGeometry(0.05, railingHeight, 0.05);
-        const postMat = materialCache.get('m-red', { color: 0xFF0000, roughness: 0.6, metalness: 0.5 });  // Share red material
+        const postMat = materialCache.get('m-red');
         for (let i = 0; i < postCount; i++) {
           const postZ = -balconyLength / 2 + (balconyLength / (postCount - 1)) * i;
           const post = new THREE.Mesh(postGeo, postMat);
           post.position.set(balconyX + roadDir * (balconyProtrusion / 2 - 0.025), currentBalconyY + 0.06 + railingHeight / 2, postZ);
-          post.castShadow = true;
+          post.castShadow = false;
           group.add(post);
         }
 
@@ -185,23 +185,23 @@ export class BuildingBuilder {
         const railHeight = 0.04;
         const railLength = balconyLength;
         const railGeo = new THREE.BoxGeometry(railThickness, railHeight, railLength);
-        const railMat = materialCache.get('m-metal', { color: COLORS.METAL, roughness: 0.6, metalness: 0.5 });
+        const railMat = materialCache.get('m-metal');
         
         const topRail = new THREE.Mesh(railGeo, railMat);
         topRail.position.set(balconyX + roadDir * (balconyProtrusion / 2 - 0.05), currentBalconyY + 0.06 + railingHeight + railHeight / 2, 0);
-        topRail.castShadow = true;
+        topRail.castShadow = false;
         group.add(topRail);
         
         const sideRailGeo = new THREE.BoxGeometry(balconyProtrusion, 0.04, 0.04);
         
         const leftSideRail = new THREE.Mesh(sideRailGeo, railMat);
         leftSideRail.position.set(balconyX, currentBalconyY + 0.06 + railingHeight + railHeight / 2, -balconyLength / 2);
-        leftSideRail.castShadow = true;
+        leftSideRail.castShadow = false;
         group.add(leftSideRail);
         
         const rightSideRail = new THREE.Mesh(sideRailGeo, railMat);
         rightSideRail.position.set(balconyX, currentBalconyY + 0.06 + railingHeight + railHeight / 2, balconyLength / 2);
-        rightSideRail.castShadow = true;
+        rightSideRail.castShadow = false;
         group.add(rightSideRail);
 
         const doorHeight = 1.8;
