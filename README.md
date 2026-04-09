@@ -1,7 +1,9 @@
 # AvoidRain - 3D Endless Runner
 [![License](https://img.shields.io/badge/License-GPL%20v3-blue.svg)](http://www.gnu.org/licenses/gpl-3.0)   
 
-A 3D browser game where you run under balconies to avoid the rain!
+**WIP**: A 3D browser game where you run under balconies to avoid the rain!
+
+<img width="1832" height="993" alt="Image" src="https://github.com/user-attachments/assets/1c621f12-8132-4a7e-b9a8-d55a8ab269fb" />
 
 ## 🎮 How to Play
 
@@ -48,41 +50,10 @@ npm run dev
 
 The game will be available at: **http://localhost:5173**
 
-### Production Build
-
-```bash
-# Create an optimized build
-npm run build
-
-# Preview the production build
-npm run preview
-```
-
 ## 🛠️ Tech Stack
 
 - **Three.js** - 3D rendering
 - **Vanilla JavaScript** - No UI framework
-
-## 🎨 Procedural Assets
-
-All assets are generated procedurally:
-- Low-poly character (box + sphere + cylinder)
-- Buildings with windows and balconies
-- Cars with random colors
-- Sounds via Web Audio API (no external audio files)
-
-## 🎯 Features
-
-- ✅ Infinite procedural world
-- ✅ Rain system with particles
-- ✅ Asymmetric balconies (LEFT/RIGHT/BOTH/NEITHER)
-- ✅ Cars with collision
-- ✅ Wet meter with fill/drain
-- ✅ Progressive difficulty
-- ✅ Score (time + distance + dry bonus)
-- ✅ Procedural sounds
-- ✅ Responsive UI
-- ✅ Keyboard + touch controls
 
 ## 📝 Credits
 
