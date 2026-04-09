@@ -19,36 +19,32 @@ export class ObstacleBuilder {
     const canColor = TRASH_CAN_COLORS[Math.floor(Math.random() * TRASH_CAN_COLORS.length)];
     const canMat = materialCache.get('m-gray');
     
-    // Main cylinder body
-    const bodyRadius = 0.35;
-    const bodyHeight = 0.8;
-    const bodyGeo = new THREE.CylinderGeometry(bodyRadius, bodyRadius, bodyHeight, 16);
+    const bodyRadius = 0.5;
+    const bodyHeight = 1.0;
+    const bodyGeo = new THREE.CylinderGeometry(bodyRadius, bodyRadius * 0.85, bodyHeight, 16);
     const body = new THREE.Mesh(bodyGeo, canMat);
     body.position.y = bodyHeight / 2;
     body.castShadow = true;
     body.receiveShadow = true;
     group.add(body);
     
-    // Bottom rim
-    const bottomGeo = new THREE.CylinderGeometry(bodyRadius, bodyRadius * 0.8, 0.1, 16);
+    const bottomGeo = new THREE.CylinderGeometry(bodyRadius * 0.9, bodyRadius * 0.7, 0.15, 16);
     const bottom = new THREE.Mesh(bottomGeo, canMat);
     bottom.position.y = 0;
     bottom.receiveShadow = true;
     group.add(bottom);
     
-    // Top rim
-    const topGeo = new THREE.CylinderGeometry(bodyRadius * 0.8, bodyRadius, 0.1, 16);
+    const topGeo = new THREE.CylinderGeometry(bodyRadius * 0.85, bodyRadius, 0.12, 16);
     const top = new THREE.Mesh(topGeo, canMat);
     top.position.y = bodyHeight;
     top.receiveShadow = true;
     group.add(top);
     
-    // Lid
-    const lidRadius = bodyRadius * 1.1;
-    const lidGeo = new THREE.CylinderGeometry(lidRadius, lidRadius, 0.1, 16);
+    const lidRadius = bodyRadius * 1.15;
+    const lidGeo = new THREE.CylinderGeometry(lidRadius, lidRadius, 0.12, 16);
     const lidMat = materialCache.get('m-dark');
     const lid = new THREE.Mesh(lidGeo, lidMat);
-    lid.position.y = bodyHeight + 0.05;
+    lid.position.y = bodyHeight + 0.06;
     lid.castShadow = true;
     group.add(lid);
     
@@ -61,8 +57,11 @@ export class ObstacleBuilder {
    * @param {Object} position - {x, y, z} position
    * @returns {THREE.Group} Bench group
    */
-  buildBench(position = { x: 0, y: 0, z: 0 }) {
+  buildBench(position = { x: 0, y: 0, z: 0 }, side = 'right') {
     const group = new THREE.Group();
+    
+    // Back faces buildings: left side→0°, right side→180°
+    group.rotation.y = side === 'left' ? Math.PI : 0;
     
     const woodColor = BENCH_BACK_COLORS[Math.floor(Math.random() * BENCH_BACK_COLORS.length)];
     const woodMat = materialCache.get('m-accent');
@@ -112,27 +111,7 @@ export class ObstacleBuilder {
       group.add(leg);
     }
     
-    // Armrests
-    const armHeight = seatHeight + benchHeight;
-    const armLength = 0.3;
-    const armWidth = 0.12;
-    const armDepth = 0.08;
-    
-    const armPositions = [
-      { x: -benchWidth / 3, z: -benchDepth / 2 },
-      { x: benchWidth / 3, z: -benchDepth / 2 },
-      { x: -benchWidth / 3, z: benchDepth / 2 },
-      { x: benchWidth / 3, z: benchDepth / 2 }
-    ];
-    
-    const armGeo = new THREE.BoxGeometry(armLength, armHeight, armDepth);
-    for (const pos of armPositions) {
-      const arm = new THREE.Mesh(armGeo, woodMat);
-      arm.position.set(pos.x, armHeight, pos.z);
-      arm.castShadow = true;
-      arm.receiveShadow = true;
-      group.add(arm);
-    }
+    // No armrests - keep bench simple without front bars
     
     group.position.set(position.x, position.y, position.z);
     return group;
@@ -146,7 +125,7 @@ export class ObstacleBuilder {
   buildSign(position = { x: 0, y: 0, z: 0 }) {
     const group = new THREE.Group();
     
-    const signMat = materialCache.get('m-yellow');
+    const signMat = materialCache.get('m-white');
     const poleMat = materialCache.get('m-dark');
     
     const poleHeight = 3.0;
@@ -181,7 +160,7 @@ export class ObstacleBuilder {
     // Optional: Add a simple "symbol" on the sign (circle)
     const symbolRadius = 0.18;
     const symbolGeo = new THREE.CircleGeometry(symbolRadius, 16);
-    const symbolMat = materialCache.get('sign-symbol-0xFFFFFF-0.5-0.0', { color: 0xFFFFFF, side: THREE.DoubleSide });
+    const symbolMat = materialCache.get('m-white', { color: 0xFFFFFF, side: THREE.DoubleSide });
     const symbol = new THREE.Mesh(symbolGeo, symbolMat);
     symbol.position.set(0, poleHeight + signHeight / 2, signThickness / 2 + 0.01);
     symbol.rotation.x = -Math.PI / 2;

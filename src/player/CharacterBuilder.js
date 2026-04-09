@@ -46,46 +46,45 @@ export class CharacterBuilder {
     hair.rotation.x = 0.1;
     group.add(hair);
 
-    const armLength = 0.65;
-    const armRadius = 0.1;
+    const armLength = 0.25;
+    const armRadius = 0.08;
     const armGeo = new THREE.CylinderGeometry(armRadius, armRadius * 0.9, armLength, 12);
     
     const leftUpperArm = new THREE.Mesh(armGeo, shirtMat);
-    leftUpperArm.position.set(-0.5, 1.3, 0);
+    leftUpperArm.position.set(-0.45, 1.25, 0);
     leftUpperArm.castShadow = false;
     group.add(leftUpperArm);
-
+    
     const rightUpperArm = new THREE.Mesh(armGeo, shirtMat);
-    rightUpperArm.position.set(0.5, 1.3, 0);
+    rightUpperArm.position.set(0.45, 1.25, 0);
     rightUpperArm.castShadow = false;
     group.add(rightUpperArm);
-
-    const forearmLength = 0.5;
+    
+    const forearmLength = 0.3;
     const forearmGeo = new THREE.CylinderGeometry(armRadius * 0.85, armRadius * 0.8, forearmLength, 12);
     
     const leftForearm = new THREE.Mesh(forearmGeo, skinMat);
-    leftForearm.position.set(-0.5, 0.75, 0);
+    leftForearm.position.set(-0.45, 0.95, 0);
     leftForearm.castShadow = false;
     group.add(leftForearm);
-
+    
     const rightForearm = new THREE.Mesh(forearmGeo, skinMat);
-    rightForearm.position.set(0.5, 0.75, 0);
+    rightForearm.position.set(0.45, 0.95, 0);
     rightForearm.castShadow = false;
     group.add(rightForearm);
-
-    const handGeo = new THREE.SphereGeometry(0.11, 8, 8);
+    
+    const handGeo = new THREE.SphereGeometry(0.08, 8, 8);
     handGeo.scale(1, 0.7, 1.2);
     
     const leftHand = new THREE.Mesh(handGeo, skinMat);
-    leftHand.position.set(-0.5, 0.25, 0);
+    leftHand.position.set(-0.45, 0.65, 0);
     leftHand.castShadow = false;
     group.add(leftHand);
-
+    
     const rightHand = new THREE.Mesh(handGeo, skinMat);
-    rightHand.position.set(0.5, 0.25, 0);
+    rightHand.position.set(0.45, 0.65, 0);
     rightHand.castShadow = false;
     group.add(rightHand);
-
     const legLength = 0.9;
     const legRadius = 0.12;
     const legGeo = new THREE.CylinderGeometry(legRadius * 0.9, legRadius, legLength, 12);

@@ -202,4 +202,16 @@ export class UIManager {
       portalButton.href = exitURL;
     }
   }
+
+  showNotification(message, type = 'default') {
+    const notification = document.getElementById('notification');
+    if (!notification) return;
+    
+    notification.textContent = message;
+    notification.className = 'notification show ' + type;
+    
+    setTimeout(() => {
+      notification.className = 'notification';
+    }, 2000);
+  }
 }

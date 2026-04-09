@@ -15,6 +15,7 @@ import { JuiceSystem } from './systems/JuiceSystem.js';
 import { ObstacleManager } from './items/ObstacleManager.js';
 import { PortalManager } from './utils/PortalManager.js';
 import { MenuDemoManager } from './systems/MenuDemoManager.js';
+import { CollisionManager } from './systems/CollisionManager.js';
 
 export class Game {
   constructor() {
@@ -80,6 +81,7 @@ export class Game {
     this.portalManager = new PortalManager();
     this.juiceSystem = new JuiceSystem(this.scene);
     this.obstacleManager = new ObstacleManager(this.scene);
+    this.collisionManager = new CollisionManager();
     this.menuDemoManager = new MenuDemoManager(this.player, this.camera, this.chunkManager, this.difficultyManager);
 
     // Check for portal params from previous game
@@ -262,11 +264,25 @@ export class Game {
         this.audioManager.playSplash();
         this.audioManager.playHorn();
         this.juiceSystem.addScreenShake(0.3);
+        this.uiManager.showNotification('💥 Hit!', 'hit');
       }
 
       const pushback = this.wetMeter.getPushbackVelocity();
       if (pushback !== 0) {
+        this.wetMeter.setOriginalX(this.player.getGroup().position.x);
         this.player.getGroup().position.x += pushback * delta;
+      }
+      
+      if (this.wetMeter.hasOriginalX() && 
+          Math.abs(this.player.getGroup().position.x - this.wetMeter.getOriginalX()) > 0.5) {
+        this.player.getGroup().position.x = this.wetMeter.getOriginalX();
+      }
+
+      if (this.wetMeter.getIsUnderShelter() && !this.wasUnderShelter) {
+        this.uiManager.showNotification('☔ Dry!', 'shelter');
+        this.wasUnderShelter = true;
+      } else if (!this.wetMeter.getIsUnderShelter()) {
+        this.wasUnderShelter = false;
       }
 
       this.scoreManager.setDistance(-playerPos.z);
@@ -276,10 +292,49 @@ export class Game {
       
       this.powerUpManager.update(delta, playerPos);
       this.juiceSystem.update(delta);
+    }
+
+    if (state === GameState.MENU || state === GameState.PLAYING) {
+      const worldData = {
+        obstacles: this.chunkManager.obstacles,
+        cars: this.chunkManager.cars,
+        puddles: this.chunkManager.puddles,
+        lampposts: this.chunkManager.lamps.map(lamp => lamp.mesh)
+      };
       
-      const obstaclePushback = this.obstacleManager.update(playerPos.z);
-      if (obstaclePushback !== 0) {
-        this.juiceSystem.addScreenShake(0.2);
+      const collisionResult = this.collisionManager.checkAll(this.player.getGroup(), worldData);
+      
+      if (collisionResult.pushbackX !== 0) {
+        this.player.getGroup().position.x += collisionResult.pushbackX * delta * 10;
+        if (state === GameState.PLAYING) {
+          this.juiceSystem.addScreenShake(0.3);
+        }
+      }
+      
+      if (collisionResult.collisionOccurred && !this.collisionManager.isBlinkingActive()) {
+        this.collisionManager.triggerBlink();
+        const HIT_MESSAGES = {
+          car: '🚗 Hit by a car!',
+          lamppost: '💡 Hit a lamppost!',
+          obstacle: '🚧 Hit an obstacle!',
+          puddle: '💦 Splashed!'
+        };
+        this.uiManager.showNotification(HIT_MESSAGES[collisionResult.hitType] || '💥 Ouch!', 'hit');
+      }
+      
+      this.collisionManager.updateBlink(this.player.getGroup(), delta);
+    }
+
+    if (state === GameState.PLAYING) {
+      
+      const playerGroup = this.player.getGroup();
+      const LEFT_BOUNDARY = -3.8;
+      const RIGHT_BOUNDARY = 3.8;
+      if (playerGroup.position.x < LEFT_BOUNDARY) {
+        playerGroup.position.x += 2.0 * delta;
+      }
+      if (playerGroup.position.x > RIGHT_BOUNDARY) {
+        playerGroup.position.x -= 2.0 * delta;
       }
 
       if (this.gameState.getState() === GameState.GAME_OVER) {        this.handleGameOver();
@@ -303,10 +358,8 @@ export class Game {
   }
 
   loop() {
-    if (!this.isRunning) return;
-
     const now = performance.now();
-    const delta = Math.min((now - this.lastTime) * 0.001, 1 / 20);
+    const delta = Math.min((now - this.lastTime) * 0.001, 1 / 30);
     this.lastTime = now;
 
     this.update(delta);

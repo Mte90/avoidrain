@@ -79,7 +79,7 @@ export class WetMeter {
     for (const child of buildingGroup.children) {
       if (child.geometry) {
         const dims = child.geometry.parameters;
-        if (dims && dims.height === 0.2 && dims.depth === 2.0) {
+        if (dims && dims.height >= 0.1 && dims.depth >= 1.5) {
           return true;
         }
       }
@@ -204,5 +204,18 @@ export class WetMeter {
     this.isShielded = false;
     this.pushbackVelocity = 0;
     this.lastCarHitTime = 0;
+    this.originalX = null;
+  }
+
+  setOriginalX(x) {
+    this.originalX = x;
+  }
+
+  hasOriginalX() {
+    return this.originalX !== null;
+  }
+
+  getOriginalX() {
+    return this.originalX;
   }
 }

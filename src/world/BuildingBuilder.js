@@ -7,6 +7,7 @@ const BUILDING_COLORS = [
   'm-facade-5', 'm-facade-6', 'm-facade-7', 'm-facade-8'
 ];
 const ACCENT_COLORS = ['m-red', 'm-accent', 'm-yellow', 'm-metal'];
+const WINDOW_FRAME_COLORS = ['m-black', 'm-dark', 'm-metal', 'm-gray'];
 
 export class BuildingBuilder {
   constructor() {}
@@ -16,7 +17,7 @@ export class BuildingBuilder {
 
     const facadeMat = materialCache.get(BUILDING_COLORS[Math.floor(Math.random() * BUILDING_COLORS.length)]);
     const facadeAccentMat = materialCache.get(ACCENT_COLORS[Math.floor(Math.random() * ACCENT_COLORS.length)]);
-    const frameMat = materialCache.get(ACCENT_COLORS[Math.floor(Math.random() * ACCENT_COLORS.length)]);
+    const frameMat = materialCache.get(WINDOW_FRAME_COLORS[Math.floor(Math.random() * WINDOW_FRAME_COLORS.length)]);
     const balconyMat = materialCache.get('m-balcony');
     const roofMat = materialCache.get('m-dark');
     const balconyRailingMat = materialCache.get('m-red');
@@ -40,17 +41,34 @@ export class BuildingBuilder {
 
     const roadDir = side === 'left' ? 1 : -1;
     const facadeX = roadDir * (width / 2 + 0.01);
-    const windowWidth = 0.7;
-    const windowHeight = 1.2;
-    const numWindowsZ = Math.max(2, Math.floor(depth / 2.5));
-    const numWindowsY = Math.max(2, Math.floor(height / 2.0));
+    const windowWidth = 1.5;  // Realistic: 1.4-1.6m wide
+    const windowHeight = 1.6;  // Realistic: 1.5-1.8m high
+    const numWindowsZ = Math.max(1, Math.floor(depth / 3.0));  // Reduced density
+    const numWindowsY = Math.max(1, Math.floor(height / 3.5));  // Reduced rows for spacing
     const windowSpacingZ = depth / (numWindowsZ + 1);
     const windowSpacingY = height / (numWindowsY + 1);
+
+    // Track balcony Y positions to avoid placing windows under balconies
+    const balconyYPositions = [];
+    if (hasBalcony) {
+      const balconyFloorY = bottomY + height * 0.4;
+      balconyYPositions.push(balconyFloorY);
+    }
 
     for (let row = 0; row < numWindowsY; row++) {
       for (let col = 0; col < numWindowsZ; col++) {
         const z = -depth / 2 + windowSpacingZ * (col + 1);
         const y = bottomY + windowSpacingY * (row + 1);
+
+        // Skip windows that would be under a balcony (too close)
+        let tooCloseToBalcony = false;
+        for (const balconyY of balconyYPositions) {
+          if (Math.abs(y - balconyY) < 2.0) {  // Don't place windows under/over balconies
+            tooCloseToBalcony = true;
+            break;
+          }
+        }
+        if (tooCloseToBalcony) continue;
 
         const frameGeo = new THREE.BoxGeometry(0.06, windowHeight + 0.08, windowWidth + 0.08);
         const windowFrame = new THREE.Mesh(frameGeo, frameMat);
@@ -60,10 +78,12 @@ export class BuildingBuilder {
         group.add(windowFrame);
 
         const glassGeo = new THREE.BoxGeometry(0.04, windowHeight, windowWidth);
-        const isLit = Math.random() > 0.4;
-        const windowMatToUse = isLit ? materialCache.get('m-yellow') : materialCache.get('m-dark');
+        const isLit = Math.random() > 0.5;
+        const windowMatToUse = isLit 
+          ? materialCache.get('m-yellow') 
+          : materialCache.get('m-gray');
         const windowGlass = new THREE.Mesh(glassGeo, windowMatToUse);
-        windowGlass.position.set(facadeX + roadDir * 0.03, y, z);
+        windowGlass.position.set(facadeX + roadDir * (-0.03), y, z);  // Glass faces road (negative offset)
         windowGlass.castShadow = false;
         windowGlass.receiveShadow = false;
         group.add(windowGlass);
@@ -79,8 +99,8 @@ export class BuildingBuilder {
 
     if (hasBalcony) {
       const balconyProtrusion = 2.5;
-      const balconyLength = 3.0;
-      const numBalconies = 1;
+      const balconyLength = depth - 1;  // Almost full building length
+      const numBalconies = Math.random() > 0.5 ? 2 : 1;  // 1-2 balconies random
       const balconyFloorY = bottomY + height * 0.4;
       
       for (let b = 0; b < numBalconies; b++) {
@@ -131,8 +151,26 @@ export class BuildingBuilder {
         rightSideRail.castShadow = false;
         group.add(rightSideRail);
 
-        const doorHeight = 2.5;
-        const doorWidth = 0.7;
+        const balconyWindowY = currentBalconyY - 0.15;
+        // Position window at balcony edge (right side for both buildings)
+        const balconyWindowZ = 0;  // Edge, not middle
+        const balconyWindowWidth = 1.5;
+        const balconyWindowHeight = 1.8;
+        const balconyWindowFrameGeo = new THREE.BoxGeometry(0.06, balconyWindowHeight + 0.08, balconyWindowWidth + 0.08);
+        const balconyWindowFrame = new THREE.Mesh(balconyWindowFrameGeo, frameMat);
+        balconyWindowFrame.position.set(facadeX, balconyWindowY, balconyWindowZ);
+        balconyWindowFrame.castShadow = false;
+        balconyWindowFrame.receiveShadow = false;
+        group.add(balconyWindowFrame);
+        const balconyWindowGlassGeo = new THREE.BoxGeometry(0.04, balconyWindowHeight, balconyWindowWidth);
+        const balconyWindowGlass = new THREE.Mesh(balconyWindowGlassGeo, materialCache.get('m-yellow'));
+        balconyWindowGlass.position.set(facadeX + roadDir * (-0.03), balconyWindowY, balconyWindowZ);
+        balconyWindowGlass.castShadow = false;
+        balconyWindowGlass.receiveShadow = false;
+        group.add(balconyWindowGlass);
+
+        const doorHeight = 2.1;  // Standard door height
+        const doorWidth = 1.0;
         const doorY = doorHeight / 2;
         const doorFrameGeo = new THREE.BoxGeometry(0.06, doorHeight + 0.08, doorWidth + 0.08);
         const doorFrame = new THREE.Mesh(doorFrameGeo, frameMat);

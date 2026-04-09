@@ -72,10 +72,10 @@ export class GroundBuilder {
     rightEdgeLine.position.set(roadWidth / 2 - 0.15, 0.16, 0);
     group.add(rightEdgeLine);
 
-    // Crosswalk stripes (6 stripes, 0.4w x 2.0l, every ~80 units based on chunk Z)
-    const crosswalkWidth = 0.4;
-    const crosswalkLength = 2.0;
-    const crosswalkSpacing = 80;
+    // Crosswalk stripes (realistic pedestrian crossing - 6 stripes, wider and more spaced)
+    const crosswalkWidth = 0.5;
+    const crosswalkLength = 3.5;
+    const crosswalkSpacing = 120;  // Much less frequent - every ~120 units
     
     const chunkZ = position.z;
     const stripeOffset = (chunkZ % crosswalkSpacing) - length / 2 + crosswalkSpacing / 2;
