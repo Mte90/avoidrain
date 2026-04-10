@@ -1,24 +1,16 @@
 import * as THREE from 'three';
+import { gameEvents } from '../core/EventBus.js';
 
-/**
- * Unified Collision Manager - handles all collision detection for player
- * Manages: obstacles, cars, puddles, lampposts
- * Triggers: pushback + blink effect on collision
- */
 export class CollisionManager {
   constructor() {
-    // Player bounding box (approximate character size)
     this.playerBoxSize = new THREE.Vector3(0.6, 1.8, 0.6);
+    this.pushbackStrength = 0.8;
+    this.blinkDuration = 0.5;
+    this.blinkInterval = 0.1;
     
-    // Collision parameters
-    this.pushbackStrength = 0.8;  // How far player gets pushed
-    this.blinkDuration = 0.5;     // Seconds player blinks
-    this.blinkInterval = 0.1;      // Seconds between blinks
-    
-    // State
     this.isBlinking = false;
     this.blinkTimer = 0;
-    this.blinkState = true;  // true = visible, false = hidden
+    this.blinkState = true;
     this.nextBlinkToggle = 0;
   }
 

@@ -244,3 +244,25 @@
 .notification.hit {
   background: rgba(239, 68, 68, 0.9);
 }
+
+/* Mute Button */
+.mute-btn {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  background: rgba(0, 0, 0, 0.6);
+  border: none;
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-size: 20px;
+  cursor: pointer;
+  transition: background 0.2s;
+  pointer-events: auto;
+  z-index: 100;
+}
+.mute-btn:hover {
+  background: rgba(0, 0, 0, 0.8);
+}
+.mute-btn:active {
+  transform: scale(0.95);
+}

@@ -32,13 +32,14 @@ test.describe('Game Launch Tests', () => {
     expect(boundingBox.height).toBeGreaterThan(0);
   });
 
-  test('game start button is visible', async ({ page }) => {
-    // Wait for menu screen and find start button
-    await page.waitForSelector('text=Click', { timeout: 5000 });
-    
-    // Look for any clickable element (button or link)
-    const startButton = await page.locator('button, a').first();
-    await expect(startButton).toBeVisible({ timeout: 3000 });
+  test('game start instruction is visible', async ({ page }) => {
+    await page.waitForSelector('canvas', { timeout: 5000 });
+    await page.waitForTimeout(1000);
+
+    const menuHint = page.locator('.menu-hint').first();
+    await expect(menuHint).toBeVisible({ timeout: 5000 });
+    const text = await menuHint.textContent();
+    expect(text.toLowerCase()).toContain('enter');
   });
 
   test('no WebGL errors', async ({ page }) => {

@@ -8,7 +8,7 @@ export class AudioManager {
     this.masterGain = null;
     this.rainNode = null;
     this.rainGain = null;
-    this.isMuted = false;
+    this.isMuted = localStorage.getItem('avoidrain-mute') === 'true';
     this.volume = 0.5;
     this.isInitialized = false;
     this.footstepInterval = null;
@@ -373,6 +373,7 @@ export class AudioManager {
    */
   toggleMute() {
     this.isMuted = !this.isMuted;
+    localStorage.setItem('avoidrain-mute', this.isMuted);
     if (this.masterGain) {
       this.masterGain.gain.value = this.isMuted ? 0 : this.volume;
     }

@@ -16,12 +16,14 @@ import { ObstacleManager } from './items/ObstacleManager.js';
 import { PortalManager } from './utils/PortalManager.js';
 import { MenuDemoManager } from './systems/MenuDemoManager.js';
 import { CollisionManager } from './systems/CollisionManager.js';
+import { PLAYER, BOUNDARIES, SCORING, CAMERA, RENDERER, FOG, SCENE_BG, LIGHTNING, LIGHT, JUICE, RAIN, COLLISION } from './core/Constants.js';
+import { gameEvents } from './core/EventBus.js';
 
 export class Game {
   constructor() {
     this.scene = new THREE.Scene();
-    this.scene.background = new THREE.Color(0x3a4a5a);
-    this.scene.fog = new THREE.Fog(0x8899aa, 25, 90);
+    this.scene.background = new THREE.Color(SCENE_BG);
+    this.scene.fog = new THREE.Fog(FOG.COLOR, FOG.NEAR, FOG.FAR);
 
     this.backdropBuilder = new BackdropBuilder();
     this.backdrop = this.backdropBuilder.createBackdrop(8);
@@ -29,28 +31,27 @@ export class Game {
     this.scene.add(this.backdrop);
 
     this.camera = new THREE.PerspectiveCamera(
-      75,
+      CAMERA.FOV,
       window.innerWidth / window.innerHeight,
-      0.1,
-      1000
+      CAMERA.NEAR,
+      CAMERA.FAR
     );
-    this.camera.position.set(0, 5, 8);
+    this.camera.position.set(CAMERA.POS_X, CAMERA.POS_Y, CAMERA.POS_Z);
 
-    this.renderer = new THREE.WebGLRenderer({ antialias: true });
+    this.renderer = new THREE.WebGLRenderer({ antialias: RENDERER.ANTIALIAS });
     this.renderer.setSize(window.innerWidth, window.innerHeight);
-    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-    this.renderer.shadowMap.enabled = false;
+    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, RENDERER.MAX_PIXEL_RATIO));
+    this.renderer.shadowMap.enabled = RENDERER.SHADOWS_ENABLED;
     document.getElementById('canvas-container').appendChild(this.renderer.domElement);
 
-    this.ambientLight = new THREE.AmbientLight(0xffffff, 0.75);
+    this.ambientLight = new THREE.AmbientLight(LIGHT.AMBIENT_COLOR, LIGHT.AMBIENT_INTENSITY);
     this.scene.add(this.ambientLight);
 
-    const directionalLight = new THREE.DirectionalLight(0xfff5e6, 1.0);
+    const directionalLight = new THREE.DirectionalLight(LIGHT.DIRECTIONAL_COLOR, LIGHT.DIRECTIONAL_INTENSITY);
     directionalLight.position.set(10, 15, 10);
     this.scene.add(directionalLight);
 
-    // Additional fill light for better building visibility
-    const fillLight = new THREE.DirectionalLight(0xffffff, 0.4);
+    const fillLight = new THREE.DirectionalLight(LIGHT.FILL_COLOR, LIGHT.FILL_INTENSITY);
     fillLight.position.set(-10, 10, -10);
     this.scene.add(fillLight);
 
@@ -73,7 +74,7 @@ export class Game {
     this.chunkManager.setDifficultyManager(this.difficultyManager);
     this.chunkManager.resize({ x: 0, y: 0, z: 0 });
 
-    this.rainSystem = new RainSystem(this.scene, 0.5);
+    this.rainSystem = new RainSystem(this.scene, RAIN.INTENSITY);
     this.rainSystem.setDifficultyManager(this.difficultyManager);
 
     this.wetMeter = new WetMeter(this.gameState);
@@ -86,9 +87,6 @@ export class Game {
 
     // Check for portal params from previous game
     this.portalParams = PortalManager.getPortalParams();
-    if (this.portalParams) {
-      console.log('Portal params detected:', this.portalParams);
-    }
 
     this.lastTime = performance.now();
     this.isRunning = true;
@@ -96,7 +94,13 @@ export class Game {
 
     // Lightning system - random 10-30 seconds between strikes
     this.lightningTimer = 0;
-    this.nextLightning = 10 + Math.random() * 20;
+    this.nextLightning = LIGHTNING.MIN_INTERVAL + Math.random() * LIGHTNING.MAX_INTERVAL;
+
+    // FPS counter (debug, toggle with F)
+    this.showFPS = false;
+    this.fpsElement = null;
+    this.fpsFrames = [];
+    this.fpsUpdateTime = 0;
 
     this.setupEventListeners();
     this.uiManager.init();
@@ -117,12 +121,25 @@ export class Game {
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Enter') {
         this.handleEnterKey();
+      } else if (e.key === 'f' || e.key === 'F') {
+        this.toggleFPS();
       }
     });
 
     document.addEventListener('click', () => {
       this.handleClick();
     });
+
+    // Mute button handler
+    const muteBtn = document.getElementById('mute-btn');
+    if (muteBtn) {
+      muteBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const isMuted = this.audioManager.toggleMute();
+        muteBtn.textContent = isMuted ? '🔇' : '🔊';
+      });
+      muteBtn.textContent = this.audioManager.getMuted() ? '🔇' : '🔊';
+    }
   }
 
   handleEnterKey() {
@@ -169,8 +186,13 @@ export class Game {
     this.wetMeter.reset();
     
     this.portalManager.dispose(this.scene);
+    this.rainSystem.dispose();
+    this.rainSystem = new RainSystem(this.scene, RAIN.INTENSITY);
+    this.rainSystem.setDifficultyManager(this.difficultyManager);
+    this.juiceSystem.dispose();
+    this.collisionManager.reset();
     
-    this.player.getGroup().position.set(-3.5, 0.1, 0);
+    this.player.getGroup().position.set(PLAYER.START_X, PLAYER.START_Y, PLAYER.START_Z);
     this.player.currentSide = false;
     
     this.chunkManager.dispose();
@@ -202,20 +224,19 @@ export class Game {
 
   triggerLightning() {
     // Flash: increase ambient light to 3.0 for 100ms
-    this.ambientLight.intensity = 3.0;
+    this.ambientLight.intensity = LIGHTNING.FLASH_INTENSITY;
     setTimeout(() => {
-      this.ambientLight.intensity = 0.55;
-    }, 100);
+      this.ambientLight.intensity = LIGHTNING.RESTORE_INTENSITY;
+    }, LIGHTNING.FLASH_DURATION_MS);
 
-    // Thunder: play after delay (0.5-3 seconds for distance effect)
-    const thunderDelay = 0.5 + Math.random() * 2.5;
+    const thunderDelay = LIGHTNING.THUNDER_MIN_DELAY + Math.random() * LIGHTNING.THUNDER_MAX_DELAY;
     setTimeout(() => {
       this.audioManager.playThunder();
     }, thunderDelay * 1000);
 
     // Schedule next lightning: 10-30 seconds
     this.lightningTimer = 0;
-    this.nextLightning = 10 + Math.random() * 20;
+    this.nextLightning = LIGHTNING.MIN_INTERVAL + Math.random() * LIGHTNING.MAX_INTERVAL;
   }
 
   update(delta) {
@@ -263,7 +284,7 @@ export class Game {
       if (wasHit) {
         this.audioManager.playSplash();
         this.audioManager.playHorn();
-        this.juiceSystem.addScreenShake(0.3);
+        this.juiceSystem.addScreenShake(JUICE.SCREEN_SHAKE_INTENSITY);
         this.uiManager.showNotification('💥 Hit!', 'hit');
       }
 
@@ -274,8 +295,9 @@ export class Game {
       }
       
       if (this.wetMeter.hasOriginalX() && 
-          Math.abs(this.player.getGroup().position.x - this.wetMeter.getOriginalX()) > 0.5) {
+          Math.abs(this.player.getGroup().position.x - this.wetMeter.getOriginalX()) > COLLISION.POSITION_THRESHOLD) {
         this.player.getGroup().position.x = this.wetMeter.getOriginalX();
+        this.wetMeter.setOriginalX(null);
       }
 
       if (this.wetMeter.getIsUnderShelter() && !this.wasUnderShelter) {
@@ -305,21 +327,22 @@ export class Game {
       const collisionResult = this.collisionManager.checkAll(this.player.getGroup(), worldData);
       
       if (collisionResult.pushbackX !== 0) {
-        this.player.getGroup().position.x += collisionResult.pushbackX * delta * 10;
+        this.player.getGroup().position.x += collisionResult.pushbackX * delta * COLLISION.PUSHBACK_FORCE;
         if (state === GameState.PLAYING) {
-          this.juiceSystem.addScreenShake(0.3);
+          this.juiceSystem.addScreenShake(JUICE.SCREEN_SHAKE_INTENSITY);
         }
       }
       
       if (collisionResult.collisionOccurred && !this.collisionManager.isBlinkingActive()) {
         this.collisionManager.triggerBlink();
+        this.scoreManager.addPenalty(SCORING.COLLISION_PENALTY);
         const HIT_MESSAGES = {
-          car: '🚗 Hit by a car!',
-          lamppost: '💡 Hit a lamppost!',
-          obstacle: '🚧 Hit an obstacle!',
-          puddle: '💦 Splashed!'
+          car: '🚗 Hit by a car! -5 pts',
+          lamppost: '💡 Hit a lamppost! -5 pts',
+          obstacle: '🚧 Hit an obstacle! -5 pts',
+          puddle: '💦 Splashed! -5 pts'
         };
-        this.uiManager.showNotification(HIT_MESSAGES[collisionResult.hitType] || '💥 Ouch!', 'hit');
+        this.uiManager.showNotification(HIT_MESSAGES[collisionResult.hitType] || '💥 Ouch! -5 pts', 'hit');
       }
       
       this.collisionManager.updateBlink(this.player.getGroup(), delta);
@@ -328,17 +351,16 @@ export class Game {
     if (state === GameState.PLAYING) {
       
       const playerGroup = this.player.getGroup();
-      const LEFT_BOUNDARY = -3.8;
-      const RIGHT_BOUNDARY = 3.8;
-      if (playerGroup.position.x < LEFT_BOUNDARY) {
-        playerGroup.position.x += 2.0 * delta;
+      if (playerGroup.position.x < BOUNDARIES.LEFT) {
+        playerGroup.position.x += PLAYER.COLLISION_RECOVERY_SPEED * delta;
       }
-      if (playerGroup.position.x > RIGHT_BOUNDARY) {
-        playerGroup.position.x -= 2.0 * delta;
+      if (playerGroup.position.x > BOUNDARIES.RIGHT) {
+        playerGroup.position.x -= PLAYER.COLLISION_RECOVERY_SPEED * delta;
       }
+    }
 
-      if (this.gameState.getState() === GameState.GAME_OVER) {        this.handleGameOver();
-      }
+    if (this.gameState.getState() === GameState.GAME_OVER) {
+      this.handleGameOver();
     }
 
     const wetMeterValue = this.wetMeter.getWetMeter();
@@ -361,6 +383,23 @@ export class Game {
     const now = performance.now();
     const delta = Math.min((now - this.lastTime) * 0.001, 1 / 30);
     this.lastTime = now;
+
+    if (this.showFPS && this.fpsElement) {
+      this.fpsFrames.push(now);
+      const oneSecondAgo = now - 1000;
+      while (this.fpsFrames.length > 0 && this.fpsFrames[0] < oneSecondAgo) {
+        this.fpsFrames.shift();
+      }
+      const fps = this.fpsFrames.length;
+      this.fpsElement.textContent = `FPS: ${fps}`;
+      if (fps >= 55) {
+        this.fpsElement.style.color = '#0f0';
+      } else if (fps >= 30) {
+        this.fpsElement.style.color = '#ff0';
+      } else {
+        this.fpsElement.style.color = '#f00';
+      }
+    }
 
     this.update(delta);
     this.render();
@@ -408,6 +447,36 @@ export class Game {
         }
       }
     });
+  }
+
+  toggleFPS() {
+    this.showFPS = !this.showFPS;
+    if (this.showFPS) {
+      if (!this.fpsElement) {
+        this.fpsElement = document.createElement('div');
+        this.fpsElement.id = 'fps-counter';
+        this.fpsElement.style.cssText = `
+          position: fixed;
+          top: 20px;
+          right: 80px;
+          background: rgba(0, 0, 0, 0.7);
+          color: #0f0;
+          padding: 8px 12px;
+          border-radius: 4px;
+          font-family: monospace;
+          font-size: 14px;
+          font-weight: bold;
+          z-index: 1000;
+          pointer-events: none;
+        `;
+        document.body.appendChild(this.fpsElement);
+      }
+      this.fpsUpdateTime = performance.now();
+      this.fpsFrames = [];
+    } else if (this.fpsElement) {
+      this.fpsElement.remove();
+      this.fpsElement = null;
+    }
   }
 }
 

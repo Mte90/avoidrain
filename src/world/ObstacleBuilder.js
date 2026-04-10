@@ -60,8 +60,8 @@ export class ObstacleBuilder {
   buildBench(position = { x: 0, y: 0, z: 0 }, side = 'right') {
     const group = new THREE.Group();
     
-    // Back faces buildings: left side→0°, right side→180°
-    group.rotation.y = side === 'left' ? Math.PI : 0;
+    // Back faces buildings: left side → π/2 (back to x=-6.5), right side → 3π/2 (back to x=6.5)
+    group.rotation.y = side === 'left' ? 3 * Math.PI / 2 : Math.PI / 2;
     
     const woodColor = BENCH_BACK_COLORS[Math.floor(Math.random() * BENCH_BACK_COLORS.length)];
     const woodMat = materialCache.get('m-accent');
@@ -176,7 +176,7 @@ export class ObstacleBuilder {
    * @param {string} type - 'trashCan', 'bench', 'sign', or 'random'
    * @returns {THREE.Group} Obstacle group
    */
-  build(position = { x: 0, y: 0, z: 0 }, type = 'random') {
+  build(position = { x: 0, y: 0, z: 0 }, type = 'random', side = 'right') {
     if (type === 'random') {
       const types = ['trashCan', 'bench', 'sign'];
       type = types[Math.floor(Math.random() * types.length)];
@@ -186,7 +186,7 @@ export class ObstacleBuilder {
       case 'trashCan':
         return this.buildTrashCan(position);
       case 'bench':
-        return this.buildBench(position);
+        return this.buildBench(position, side);
       case 'sign':
         return this.buildSign(position);
       default:

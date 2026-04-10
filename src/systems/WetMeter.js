@@ -1,8 +1,7 @@
 import * as THREE from 'three';
 import { GameState } from './GameState.js';
+import { RAIN } from '../core/Constants.js';
 
-const FILL_RATE = 10;
-const DRAIN_RATE = 15;
 const CAR_HIT_PENALTY = 20;
 const PUDDLE_WETNESS = 5;
 
@@ -88,33 +87,6 @@ export class WetMeter {
   }
 
   checkCarCollision(playerX, playerZ, cars) {
-    const currentTime = performance.now() * 0.001;
-    if (currentTime - this.lastCarHitTime < this.carHitCooldown) {
-      return false;
-    }
-    
-    const playerWidth = PLAYER_RADIUS * 2;
-    const playerDepth = PLAYER_RADIUS * 2;
-    
-    for (const car of cars) {
-      if (!car.visible) continue;
-      
-      const carX = car.position.x;
-      const carZ = car.position.z;
-      
-      if (this.checkAABBCollision(
-        playerX, playerZ, playerWidth, playerDepth,
-        carX, carZ, CAR_WIDTH, CAR_DEPTH
-      )) {
-        this.wetMeter = Math.min(this.wetMeter + CAR_HIT_PENALTY, 100);
-        this.lastCarHitTime = currentTime;
-        
-        this.pushbackVelocity = playerX < carX ? -5 : 5;
-        
-        return true;
-      }
-    }
-    
     return false;
   }
 
@@ -149,9 +121,9 @@ export class WetMeter {
     this.isUnderShelter = this.checkBalconyShelter(playerX, playerZ, chunks);
     
     if (this.isUnderShelter) {
-      this.wetMeter = Math.max(0, this.wetMeter - DRAIN_RATE * delta);
+      this.wetMeter = Math.max(0, this.wetMeter - RAIN.WETNESS_DRAIN_RATE * delta);
     } else {
-      this.wetMeter = Math.min(100, this.wetMeter + FILL_RATE * delta);
+      this.wetMeter = Math.min(100, this.wetMeter + RAIN.WETNESS_FILL_RATE * delta);
     }
     
     const wasHit = this.checkCarCollision(playerX, playerZ, cars);
@@ -169,7 +141,7 @@ export class WetMeter {
     
     this.gameState.wetMeter = this.wetMeter;
     
-    if (this.wetMeter >= 100) {
+    if (this.wetMeter >= RAIN.GAME_OVER_THRESHOLD) {
       this.gameState.setState(GameState.GAME_OVER);
     }
     

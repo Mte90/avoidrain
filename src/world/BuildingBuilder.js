@@ -63,7 +63,7 @@ export class BuildingBuilder {
         // Skip windows that would be under a balcony (too close)
         let tooCloseToBalcony = false;
         for (const balconyY of balconyYPositions) {
-          if (Math.abs(y - balconyY) < 2.0) {  // Don't place windows under/over balconies
+          if (Math.abs(y - balconyY) < 1.2) {  // Skip only windows directly under balcony
             tooCloseToBalcony = true;
             break;
           }
@@ -179,7 +179,7 @@ export class BuildingBuilder {
         group.add(doorFrame);
 
         const doorGlassGeo = new THREE.BoxGeometry(0.04, doorHeight, doorWidth);
-        const doorGlass = new THREE.Mesh(doorGlassGeo, materialCache.get('m-yellow'));
+        const doorGlass = new THREE.Mesh(doorGlassGeo, materialCache.get('m-dark'));
         doorGlass.position.set(facadeX + roadDir * 0.03, doorY, 0);
         doorGlass.castShadow = false;
         group.add(doorGlass);

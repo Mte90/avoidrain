@@ -36,6 +36,7 @@ export class ChunkManager {
     this.puddles = [];
     this.obstacles = [];
     this.lamps = [];
+    this.balconies = [];
     
     this.puddleBuilder = new PuddleBuilder();
     this.lastGeneratedChunkZ = 0;
@@ -106,20 +107,10 @@ export class ChunkManager {
   }
 
   getBalconyConfig() {
-    // 70% chance to have balcony(s)
-    if (Math.random() > 0.7) {
-      return 'NEITHER';
-    }
-    
-    // Early game: more balconies for visual variety
-    if (this.difficultyManager && this.difficultyManager.getGameTime() < 60) {
-      const configs = ['BOTH', 'BOTH', 'BOTH', 'LEFT', 'RIGHT'];
-      return configs[Math.floor(Math.random() * configs.length)];
-    }
-    
-    // Balanced distribution: BOTH most common, then LEFT/RIGHT
-    const configs = ['BOTH', 'BOTH', 'BOTH', 'LEFT', 'RIGHT'];
-    return configs[Math.floor(Math.random() * configs.length)];
+    const forceSide = Math.random() < 0.5 ? 'LEFT' : 'RIGHT';
+    const leftHasBalcony = Math.random() < 0.7 || forceSide === 'LEFT';
+    const rightHasBalcony = Math.random() < 0.7 || forceSide === 'RIGHT';
+    return { leftHasBalcony, rightHasBalcony };
   }
 
   createChunk(chunkZ) {
@@ -144,15 +135,12 @@ export class ChunkManager {
     });
     chunk.add(groundGroup);
 
-    const leftBalconyConfig = this.getBalconyConfig();
-    const rightBalconyConfig = this.getBalconyConfig();
+    const balconyConfig = this.getBalconyConfig();
 
     const numBuildings = 2;
     const buildingSpacing = CHUNK_SIZE / numBuildings;
     const chunkWorldZ = chunkZ;
     const buildingsInThisChunk = [];
-    
-    console.log('[ChunkManager] createChunk Z=', chunkZ, 'creating', numBuildings, 'buildings');
     
     for (let b = 0; b < numBuildings; b++) {
       const bz = -CHUNK_SIZE / 2 + buildingSpacing / 2 + b * buildingSpacing;
@@ -177,7 +165,7 @@ export class ChunkManager {
           2.5,
           leftHeight,
           actualLeftDepth,
-          leftBalconyConfig === 'LEFT' || leftBalconyConfig === 'BOTH',
+          balconyConfig.leftHasBalcony,
           'left'
         );
         leftBuilding.traverse((child) => {
@@ -187,9 +175,11 @@ export class ChunkManager {
           }
         });
         chunk.add(leftBuilding);
-        console.log('[ChunkManager] Added LEFT building at x=-6.5, z=', bz, 'height=', leftHeight);
         this.buildingPositions.push({ side: 'left', minZ: leftMinZ, maxZ: leftMaxZ, chunkZ });
         buildingsInThisChunk.push({ side: 'left', minZ: leftMinZ, maxZ: leftMaxZ });
+        if (balconyConfig.leftHasBalcony) {
+          this.balconies.push({ side: 'left', x: -6.5, z: bz, chunkZ });
+        }
       }
 
       const rightHeight = 8 + Math.random() * 12;
@@ -209,11 +199,11 @@ export class ChunkManager {
       
       if (!rightOverlaps) {
       const rightBuilding = this.buildingBuilder.build(
-        { x: 6.5, y: 0.15, z: bz },  // Raised from y: 0 to y: 0.15 to sit on ground
+        { x: 6.5, y: 0.15, z: bz },
           2.5,
           rightHeight,
           actualRightDepth,
-          rightBalconyConfig === 'RIGHT' || rightBalconyConfig === 'BOTH',
+          balconyConfig.rightHasBalcony,
           'right'
         );
         rightBuilding.traverse((child) => {
@@ -223,13 +213,13 @@ export class ChunkManager {
           }
         });
         chunk.add(rightBuilding);
-        console.log('[ChunkManager] Added RIGHT building at x=6.5, z=', bz, 'height=', rightHeight);
         this.buildingPositions.push({ side: 'right', minZ: rightMinZ, maxZ: rightMaxZ, chunkZ });
         buildingsInThisChunk.push({ side: 'right', minZ: rightMinZ, maxZ: rightMaxZ });
+        if (balconyConfig.rightHasBalcony) {
+          this.balconies.push({ side: 'right', x: 6.5, z: bz, chunkZ });
+        }
       }
     }
-    
-    console.log('[ChunkManager] Chunk Z=', chunkZ, 'has', buildingsInThisChunk.length, 'buildings');
     
     chunk.userData.buildings = buildingsInThisChunk;
 
@@ -296,7 +286,7 @@ export class ChunkManager {
       const length = CHUNK_SIZE;
       const carCount = Math.random() > 0.7 ? 2 : 1;
       
-      const lanes = carCount === 2 ? [0.8, -0.8] : [Math.random() > 0.5 ? 0.8 : -0.8];
+      const lanes = carCount === 2 ? [1.0, -1.0] : [Math.random() > 0.5 ? 1.0 : -1.0];
       
       for (let i = 0; i < carCount; i++) {
         const lane = lanes[i];
@@ -372,22 +362,28 @@ export class ChunkManager {
 
   spawnPuddlesForChunk(chunk, chunkZ) {
     const length = CHUNK_SIZE;
-    const puddleSpawnChance = 0.25;
-    
+    const puddleSpawnChance = 0.40;
+
     for (let z = chunkZ - length / 2; z < chunkZ + length / 2; z += 3) {
       if (Math.random() < puddleSpawnChance) {
-        const spawnOnRoad = Math.random() > 0.3;
+        const onLeftLane = Math.random() > 0.5;
         let puddleX;
-        
-        if (spawnOnRoad) {
-          const lane = Math.random() > 0.5 ? 1 : -1;
-          puddleX = lane * (0.8 + Math.random() * 1.5);  // In lanes, not on center line
+
+        const onRoad = Math.random() > 0.4;
+        if (onRoad) {
+          if (onLeftLane) {
+            puddleX = -0.5 - Math.random() * 0.8;
+          } else {
+            puddleX = 0.5 + Math.random() * 0.8;
+          }
         } else {
-          puddleX = Math.random() > 0.5 
-            ? -4.5 / 2 - 3.0 / 2 - 0.5 + Math.random() * 3.0
-            : 4.5 / 2 + 3.0 / 2 - 3.0 + Math.random() * 3.0;
+          if (onLeftLane) {
+            puddleX = -3.0 - Math.random() * 1.0;
+          } else {
+            puddleX = 3.0 + Math.random() * 1.0;
+          }
         }
-        
+
         const puddle = this.puddleBuilder.build({ x: puddleX, y: 0.16, z: z });
         puddle.traverse((child) => {
           if (child.isMesh) {
@@ -439,7 +435,7 @@ export class ChunkManager {
       usedPositions.push({ side, z: localZ });
       
       const type = obstacleTypes[Math.floor(Math.random() * obstacleTypes.length)];
-      const obstacle = this.obstacleBuilder.build({ x: 0, y: 0, z: 0 }, type);
+      const obstacle = this.obstacleBuilder.build({ x: 0, y: 0, z: 0 }, type, side);
       obstacle.position.set(sidewalkX, 0.5, localZ);
       
       obstacle.userData.side = side;
@@ -547,8 +543,7 @@ export class ChunkManager {
     });
     chunk.add(groundGroup);
 
-    const leftBalconyConfig = this.getBalconyConfig();
-    const rightBalconyConfig = this.getBalconyConfig();
+    const balconyConfig = this.getBalconyConfig();
 
     const numBuildings = 2;
     const buildingSpacing = CHUNK_SIZE / numBuildings;
@@ -561,7 +556,7 @@ export class ChunkManager {
         2.5,
         leftHeight,
         Math.min(leftDepth, buildingSpacing - 1),
-        leftBalconyConfig === 'LEFT' || leftBalconyConfig === 'BOTH',
+        balconyConfig.leftHasBalcony,
         'left'
       );
       leftBuilding.traverse((child) => {
@@ -579,7 +574,7 @@ export class ChunkManager {
         2.5,
         rightHeight,
         Math.min(rightDepth, buildingSpacing - 1),
-        rightBalconyConfig === 'RIGHT' || rightBalconyConfig === 'BOTH',
+        balconyConfig.rightHasBalcony,
         'right'
       );
       rightBuilding.traverse((child) => {
@@ -695,13 +690,19 @@ export class ChunkManager {
 
   updateCars(delta) {
     const carSpeed = 8;
-    for (const car of this.cars) {
+    for (let i = this.cars.length - 1; i >= 0; i--) {
+      const car = this.cars[i];
       const direction = car.userData.direction || 1;
       car.position.z += carSpeed * direction * delta;
-      if (car.position.z > 40) {
-        car.position.z = -40;
-      } else if (car.position.z < -40) {
-        car.position.z = 40;
+      
+      // Hide cars when they go out of view behind camera
+      const cameraZ = 180;
+      if (direction > 0 && car.position.z > cameraZ + 2) {
+        car.visible = false;
+      } else if (direction < 0 && car.position.z < -cameraZ - 2) {
+        car.visible = false;
+      } else {
+        car.visible = true;
       }
     }
   }

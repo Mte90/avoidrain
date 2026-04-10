@@ -5,6 +5,7 @@ export class ScoreManager {
     this.distanceTraveled = 0;
     this.dryBonus = 0;
     this.dryTimeAccumulator = 0;
+    this.penalty = 0;
   }
 
   update(delta, isUnderShelter) {
@@ -18,16 +19,16 @@ export class ScoreManager {
       this.dryBonus = 0;
     }
 
-    this.score = this.timeSurvived + this.distanceTraveled + this.dryBonus;
+    this.score = this.timeSurvived + this.distanceTraveled + this.dryBonus + this.penalty;
   }
 
   setDistance(distance) {
     this.distanceTraveled = distance;
-    this.score = this.timeSurvived + this.distanceTraveled + this.dryBonus;
+    this.score = this.timeSurvived + this.distanceTraveled + this.dryBonus + this.penalty;
   }
 
   getScore() {
-    return Math.floor(this.score);
+    return Math.floor(Math.max(0, this.score));
   }
 
   getScoreBreakdown() {
@@ -42,8 +43,15 @@ export class ScoreManager {
   reset() {
     this.score = 0;
     this.timeSurvived = 0;
+    this.timeSurvived = 0;
     this.distanceTraveled = 0;
     this.dryBonus = 0;
     this.dryTimeAccumulator = 0;
+    this.penalty = 0;
+  }
+
+  addPenalty(points) {
+    this.penalty -= points;
+    this.score = this.timeSurvived + this.distanceTraveled + this.dryBonus + this.penalty;
   }
 }

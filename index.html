@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script async src="https://jam.pieter.com/2026/widget.js"></script>
   <title>AvoidRain - 3D Endless Runner</title>
   <link rel="icon" type="image/svg+xml" href="./favicon.svg">
   <link rel="stylesheet" href="./src/styles/main.css">
@@ -29,7 +30,6 @@
       z-index: 1;
     }
   </style>
-  <!-- Import Map per Three.js - necessario per GitHub Pages senza bundler -->
   <script type="importmap">
   {
     "imports": {
@@ -37,8 +37,6 @@
     }
   }
   </script>
-  <!-- Game Jam Widget -->
-  <script async src="https://jam.pieter.com/2026/widget.js"></script>
 </head>
 <body>
   <div id="canvas-container"></div>
@@ -67,6 +65,7 @@
           <div id="score" class="stat-value">0</div>
         </div>
         <div id="notification" class="notification"></div>
+        <button id="mute-btn" class="mute-btn" aria-label="Toggle sound">🔊</button>
       </div>
     </div>
 
@@ -78,6 +77,7 @@
         <p class="menu-tagline">Don't get soaked!</p>
         <div class="menu-instructions">
           <p>🏃 Use A/D or Arrow Keys to move</p>
+          <p>👆 Swipe left/right on screen to move</p>
           <p>☔ Find shelter under balconies</p>
         </div>
         <p class="menu-hint">Press ENTER to Start</p>

@@ -1,0 +1,75 @@
+export const PLAYER = {
+  START_X: -3.5,
+  START_Y: 0.1,
+  START_Z: 0,
+  HEIGHT: 0.5,
+  COLLISION_RECOVERY_SPEED: 2.0,
+};
+
+export const BOUNDARIES = {
+  LEFT: -3.8,
+  RIGHT: 3.8,
+};
+
+export const SCORING = {
+  COLLISION_PENALTY: 5,
+};
+
+export const CAMERA = {
+  FOV: 75,
+  NEAR: 0.1,
+  FAR: 1000,
+  POS_X: 0,
+  POS_Y: 4.5,
+  POS_Z: 9,
+};
+
+export const RENDERER = {
+  MAX_PIXEL_RATIO: 2,
+  ANTIALIAS: true,
+  SHADOWS_ENABLED: false,
+};
+
+export const FOG = {
+  COLOR: 0x8899aa,
+  NEAR: 25,
+  FAR: 90,
+};
+
+export const SCENE_BG = 0x3a4a5a;
+
+export const LIGHTNING = {
+  MIN_INTERVAL: 10,
+  MAX_INTERVAL: 20,
+  FLASH_INTENSITY: 3.0,
+  FLASH_DURATION_MS: 100,
+  RESTORE_INTENSITY: 0.55,
+  THUNDER_MIN_DELAY: 0.5,
+  THUNDER_MAX_DELAY: 2.5,
+};
+
+export const LIGHT = {
+  AMBIENT_COLOR: 0xffffff,
+  AMBIENT_INTENSITY: 0.75,
+  DIRECTIONAL_COLOR: 0xfff5e6,
+  DIRECTIONAL_INTENSITY: 1.0,
+  FILL_COLOR: 0xffffff,
+  FILL_INTENSITY: 0.4,
+};
+
+export const JUICE = {
+  SCREEN_SHAKE_INTENSITY: 0.3,
+};
+
+export const RAIN = {
+  INTENSITY: 0.5,
+  WETNESS_FILL_RATE: 6,
+  WETNESS_DRAIN_RATE: 20,
+  GAME_OVER_THRESHOLD: 120,
+};
+
+export const COLLISION = {
+  PUSHBACK_FORCE: 10,
+  BLINK_DURATION: 0.3,
+  POSITION_THRESHOLD: 0.5,
+};

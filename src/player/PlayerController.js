@@ -41,7 +41,7 @@ export class PlayerController {
     this._findLegs();
     
     // Camera follow
-    this.cameraOffset = new THREE.Vector3(0, 4, 7);
+    this.cameraOffset = new THREE.Vector3(0, 5, 8);
     this.cameraLerpSpeed = 3.0;
     this.camera = null;
   }

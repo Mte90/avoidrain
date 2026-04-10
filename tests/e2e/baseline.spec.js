@@ -52,34 +52,31 @@ test.describe('Baseline: Asset Tracking', () => {
     if (!ready) test.skip();
   });
 
-  test('buildings exist with windows and doors', async ({ page }) => {
+  test('buildings and balconies tracked', async ({ page }) => {
     const data = await page.evaluate(() => {
       const g = window.game;
-      const chunks = g.chunkManager.getActiveChunks();
-      let windowCount = 0;
-      let doorCount = 0;
-
-      chunks.forEach(chunk => {
-        chunk.traverse(child => {
-          if (child.isMesh) {
-            const h = child.geometry?.parameters?.height || 0;
-            const w = child.geometry?.parameters?.width || 0;
-            if (h > 1.0 && h < 2.5 && w > 0.8) windowCount++;
-            if (h > 1.8 && h < 2.5 && w > 0.5 && w < 1.5) doorCount++;
-          }
-        });
+      if (!g || !g.chunkManager) return { buildingCount: 0, balconyCount: 0 };
+      
+      if (g.chunkManager.getActiveChunks().length === 0) {
+        g.chunkManager.resize({ x: 0, y: 0, z: 0 });
+      }
+      
+      return new Promise(resolve => {
+        setTimeout(() => {
+          resolve({ 
+            buildingCount: g.chunkManager.buildingPositions.length, 
+            balconyCount: g.chunkManager.balconies.length 
+          });
+        }, 1500);
       });
-
-      return { chunkCount: chunks.length, buildingPositions: g.chunkManager.buildingPositions.length, windowCount, doorCount };
     });
-
+    
     console.log('Building data:', JSON.stringify(data));
-    expect(data.chunkCount).toBeGreaterThan(0);
-    expect(data.windowCount).toBeGreaterThan(0);
-
+    expect(data.buildingCount).toBeGreaterThan(0);
+    expect(data.balconyCount).toBeGreaterThan(0);
+    
     await page.screenshot({ path: '.sisyphus/evidence/baseline-buildings.png' });
   });
-
   test('lampposts tracked in chunkManager.lamps', async ({ page }) => {
     const data = await page.evaluate(() => {
       const g = window.game;
