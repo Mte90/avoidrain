@@ -34,6 +34,10 @@ export class PlayerController {
     // Hair wetness effect
     this.hairWetness = 0;
     
+    // Collision cooldown
+    this.lastCollisionTime = 0;
+    this.collisionCooldown = 1000;
+    
     // Build character - start at Y=1.8 so body is above road, legs hang down
     this.characterBuilder = new CharacterBuilder();
     this.group = this.characterBuilder.build({ x: this.LEFT_SIDE, y: 0.1, z: 0 });
@@ -150,6 +154,11 @@ export class PlayerController {
   }
 
   checkObstacleCollision() {
+    const now = performance.now();
+    if (now - this.lastCollisionTime < this.collisionCooldown) {
+      return;
+    }
+    
     const playerBox = new THREE.Box3().setFromCenterAndSize(
       this.group.position,
       new THREE.Vector3(1, 2, 1)
@@ -172,7 +181,8 @@ export class PlayerController {
         this.transitionElapsed = 0;
         this.startX = this.group.position.x;
         this.targetX = targetX;
-        this.currentSide = (obstacleSide === 'right');
+        this.currentSide = obstacleSide === 'right';
+        this.lastCollisionTime = now;
       }      }
     }
   }

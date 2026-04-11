@@ -339,7 +339,7 @@ export class Game {
         const HIT_MESSAGES = {
           car: '🚗 Hit by a car! -5 pts',
           lamppost: '💡 Hit a lamppost! -5 pts',
-          obstacle: '🚧 Hit a trash can! -5 pts',
+          trashCan: '🗑️ Hit a trash can! -5 pts',
           bench: '🪑 Hit a bench! -5 pts',
           sign: '🪧 Hit a sign! -5 pts',
           puddle: '💦 Splashed! -5 pts'
@@ -348,7 +348,7 @@ export class Game {
         if (obsData && obsData.type) {
           const typeKey = obsData.type;
           this.uiManager.showNotification(HIT_MESSAGES[typeKey] || '🚧 Hit an obstacle! -5 pts', 'hit');
-        } else {
+        } else if (collisionResult.hitType) {
           this.uiManager.showNotification(HIT_MESSAGES[collisionResult.hitType] || '💥 Ouch! -5 pts', 'hit');
         }
       }

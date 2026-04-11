@@ -10,6 +10,7 @@ export class MaterialCache {
     const list = [
       ['m-gray', 0x999999, 0.5, 0.05],
       ['m-dark', 0x2C2C2C, 0.8, 0.1],
+      ['m-brown', 0x8B4513, 0.6, 0.2],
       ['m-light', 0x959595, 0.9, 0.02],
       ['m-black', 0x1A1A1A, 0.9, 0.1],
       ['m-white', 0xFFFFFF, 0.9, 0.02],

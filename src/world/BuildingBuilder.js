@@ -78,12 +78,12 @@ export class BuildingBuilder {
         group.add(windowFrame);
 
         const isLit = Math.random() > 0.4;
-        const glassGeo = new THREE.BoxGeometry(0.08, windowHeight - 0.1, windowWidth - 0.1);
+        const glassGeo = new THREE.BoxGeometry(0.12, windowHeight - 0.1, windowWidth - 0.1);
         const glassMat = new THREE.MeshBasicMaterial({
-          color: isLit ? 0xFFFF00 : 0x222222
+          color: isLit ? 0xFFFF00 : 0x333333
         });
         const glass = new THREE.Mesh(glassGeo, glassMat);
-        glass.position.set(facadeX + (roadDir * 0.03), y, z);
+        glass.position.set(facadeX + (roadDir * 0.06), y, z);
         glass.castShadow = false;
         group.add(glass);
       }
@@ -164,7 +164,7 @@ export class BuildingBuilder {
         const balconyGlassGeo = new THREE.PlaneGeometry(balconyWindowWidth - 0.1, balconyWindowHeight - 0.1);
         const balconyGlassMat = new THREE.MeshBasicMaterial({ color: 0xFFFF00 });
         const balconyGlass = new THREE.Mesh(balconyGlassGeo, balconyGlassMat);
-        balconyGlass.position.set(facadeX + (roadDir * 0.03), balconyWindowY + balconyWindowHeight / 2, balconyWindowZ);
+        balconyGlass.position.set(facadeX + (roadDir * 0.06), balconyWindowY + balconyWindowHeight / 2, balconyWindowZ);
         balconyGlass.rotation.y = -Math.PI / 2 * roadDir;
         balconyGlass.castShadow = false;
         group.add(balconyGlass);
@@ -176,7 +176,7 @@ export class BuildingBuilder {
         
         // Door panel
         const doorGeo = new THREE.BoxGeometry(doorThickness, doorHeight, doorWidth);
-        const doorMat = materialCache.get('m-dark');
+        const doorMat = materialCache.get('m-brown');
         const door = new THREE.Mesh(doorGeo, doorMat);
         door.position.set(facadeX + (roadDir * doorThickness / 2), doorY, 0);
         door.castShadow = true;
@@ -199,6 +199,19 @@ export class BuildingBuilder {
         handle.castShadow = false;
         door.add(handle); // Add to door so it moves with door
       }
+    }
+
+    if (Math.random() < 0.4) {
+      const antennaHeight = 1.5 + Math.random() * 2;
+      const antennaGeo = new THREE.CylinderGeometry(0.05, 0.08, antennaHeight, 6);
+      const antennaMat = materialCache.get('m-gray', { color: 0x404040 });
+      const antenna = new THREE.Mesh(antennaGeo, antennaMat);
+      antenna.position.set(
+        (Math.random() - 0.5) * depth * 0.6,
+        height + antennaHeight / 2,
+        (Math.random() - 0.5) * width * 0.6
+      );
+      group.add(antenna);
     }
 
     group.position.set(position.x, position.y, position.z);

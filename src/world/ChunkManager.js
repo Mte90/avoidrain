@@ -145,7 +145,7 @@ export class ChunkManager {
     for (let b = 0; b < numBuildings; b++) {
       const bz = -CHUNK_SIZE / 2 + buildingSpacing / 2 + b * buildingSpacing;
       const leftHeight = 8 + Math.random() * 12;
-      const leftDepth = 14 + Math.random() * 4;  // 14-18 units realistic range
+      const leftDepth = 18 + Math.random() * 8;  // 18-26 units for more depth variation
       const actualLeftDepth = Math.min(leftDepth, buildingSpacing - 0.5);
       const leftWorldZ = chunkWorldZ + bz;
       const leftMinZ = leftWorldZ - actualLeftDepth / 2;
@@ -161,14 +161,13 @@ export class ChunkManager {
       
       if (!leftOverlaps) {
       const leftBuilding = this.buildingBuilder.build(
-        { x: -4.2, y: 0.15, z: bz + (Math.random() - 0.5) + (Math.random() - 0.5) },
-          2.5,
-          leftHeight,
-          actualLeftDepth,
-          balconyConfig.leftHasBalcony,
-          'left'
-        );
-        leftBuilding.traverse((child) => {
+        { x: -6.0, y: 0.15, z: bz + (Math.random() - 0.5) },
+        2.5,
+        leftHeight,
+        actualLeftDepth,
+        balconyConfig.leftHasBalcony,
+        'left'
+      );        leftBuilding.traverse((child) => {
           if (child.isMesh) {
             child.castShadow = true;
             child.receiveShadow = true;
@@ -183,7 +182,7 @@ export class ChunkManager {
       }
 
       const rightHeight = 8 + Math.random() * 12;
-      const rightDepth = 14 + Math.random() * 4;  // 14-18 units realistic range
+      const rightDepth = 18 + Math.random() * 8;  // 18-26 units for more depth variation
       const actualRightDepth = Math.min(rightDepth, buildingSpacing - 0.5);
       const rightWorldZ = chunkWorldZ + bz;
       const rightMinZ = rightWorldZ - actualRightDepth / 2;
@@ -199,14 +198,13 @@ export class ChunkManager {
       
       if (!rightOverlaps) {
       const rightBuilding = this.buildingBuilder.build(
-        { x: 4.2, y: 0.15, z: bz + (Math.random() - 0.5) + (Math.random() - 0.5) },
-          2.5,
-          rightHeight,
-          actualRightDepth,
-          balconyConfig.rightHasBalcony,
-          'right'
-        );
-        rightBuilding.traverse((child) => {
+        { x: 6.0, y: 0.15, z: bz + (Math.random() - 0.5) },
+        2.5,
+        rightHeight,
+        actualRightDepth,
+        balconyConfig.rightHasBalcony,
+        'right'
+      );        rightBuilding.traverse((child) => {
           if (child.isMesh) {
             child.castShadow = true;
             child.receiveShadow = true;
@@ -463,7 +461,8 @@ export class ChunkManager {
       car = this.carPool.pop();
       car.visible = true;
     } else {
-      car = this.carBuilder.build({ x: 0, y: 0, z: 0 }, -1);
+      const colorIndex = Math.floor(Math.random() * 14);
+      car = this.carBuilder.build({ x: 0, y: 0, z: 0 }, colorIndex);
       car.traverse((child) => {
         if (child.isMesh) {
           child.castShadow = true;
@@ -558,7 +557,7 @@ export class ChunkManager {
       const leftHeight = 8 + Math.random() * 12;
       const leftDepth = 14 + Math.random() * 4;  // 14-18 units realistic range
       const leftBuilding = this.buildingBuilder.build(
-        { x: -6.5, y: 0, z: bz + (Math.random() - 0.5) + (Math.random() - 0.5) },
+        { x: -6.0, y: 0.15, z: bz + (Math.random() - 0.5) },
         2.5,
         leftHeight,
         Math.min(leftDepth, buildingSpacing - 0.5),
@@ -576,7 +575,7 @@ export class ChunkManager {
       const rightHeight = 8 + Math.random() * 12;
       const rightDepth = 14 + Math.random() * 4;  // 14-18 units realistic range
       const rightBuilding = this.buildingBuilder.build(
-        { x: 6.5, y: 0, z: bz + (Math.random() - 0.5) + (Math.random() - 0.5) },
+        { x: 6.0, y: 0.15, z: bz + (Math.random() - 0.5) },
         2.5,
         rightHeight,
         Math.min(rightDepth, buildingSpacing - 0.5),

@@ -163,11 +163,14 @@ export class ObstacleBuilder {
     const texture = new THREE.CanvasTexture(canvas);
     texture.needsUpdate = true;
     
-    const signMat = new THREE.MeshBasicMaterial({ map: texture, side: THREE.DoubleSide });
+    const signMat = new THREE.MeshBasicMaterial({ map: texture, side: THREE.FrontSide });
     const signGeo = new THREE.BoxGeometry(signWidth, signHeight, 0.02);
     const sign = new THREE.Mesh(signGeo, signMat);
     sign.position.set(0, poleHeight + signHeight / 2, 0);
-    sign.rotation.y = side === 'left' ? 0 : Math.PI;
+    // Sign should face toward the road (player)
+    // Left side: sign faces right (toward road at x=0)
+    // Right side: sign faces left (toward road at x=0)
+    sign.rotation.y = side === 'left' ? Math.PI / 2 : -Math.PI / 2;
     sign.castShadow = false;
     group.add(sign);
     
