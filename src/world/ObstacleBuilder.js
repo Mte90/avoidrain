@@ -120,7 +120,7 @@ export class ObstacleBuilder {
    * @param {Object} position - {x, y, z} position
    * @returns {THREE.Group} Sign group
    */
-  buildSign(position = { x: 0, y: 0, z: 0 }) {
+  buildSign(position = { x: 0, y: 0, z: 0 }, side = 'right') {
     const group = new THREE.Group();
     
     const poleMat = materialCache.get('m-dark');
@@ -151,11 +151,11 @@ export class ObstacleBuilder {
     canvas.height = 128;
     const ctx = canvas.getContext('2d');
     
-    ctx.fillStyle = '#FFD700';
+    ctx.fillStyle = '#FFFFFF';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     
     ctx.fillStyle = '#000000';
-    ctx.font = 'bold 36px Arial';
+    ctx.font = 'bold 32px Arial';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.fillText('by Mte90', canvas.width / 2, canvas.height / 2);
@@ -163,10 +163,11 @@ export class ObstacleBuilder {
     const texture = new THREE.CanvasTexture(canvas);
     texture.needsUpdate = true;
     
-    const signMat = new THREE.MeshBasicMaterial({ map: texture });
+    const signMat = new THREE.MeshBasicMaterial({ map: texture, side: THREE.DoubleSide });
     const signGeo = new THREE.BoxGeometry(signWidth, signHeight, 0.02);
     const sign = new THREE.Mesh(signGeo, signMat);
     sign.position.set(0, poleHeight + signHeight / 2, 0);
+    sign.rotation.y = side === 'left' ? 0 : Math.PI;
     sign.castShadow = false;
     group.add(sign);
     

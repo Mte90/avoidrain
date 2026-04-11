@@ -145,8 +145,8 @@ export class ChunkManager {
     for (let b = 0; b < numBuildings; b++) {
       const bz = -CHUNK_SIZE / 2 + buildingSpacing / 2 + b * buildingSpacing;
       const leftHeight = 8 + Math.random() * 12;
-      const leftDepth = 40 + Math.random() * 10;  // Increased from 18 to 40-50 (tripled)
-      const actualLeftDepth = Math.min(leftDepth, buildingSpacing - 1);
+      const leftDepth = 14 + Math.random() * 4;  // 14-18 units realistic range
+      const actualLeftDepth = Math.min(leftDepth, buildingSpacing - 0.5);
       const leftWorldZ = chunkWorldZ + bz;
       const leftMinZ = leftWorldZ - actualLeftDepth / 2;
       const leftMaxZ = leftWorldZ + actualLeftDepth / 2;
@@ -161,7 +161,7 @@ export class ChunkManager {
       
       if (!leftOverlaps) {
       const leftBuilding = this.buildingBuilder.build(
-        { x: -6.5, y: 0.15, z: bz },  // Raised from y: 0 to y: 0.15 to sit on ground
+        { x: -4.2, y: 0.15, z: bz + (Math.random() - 0.5) + (Math.random() - 0.5) },
           2.5,
           leftHeight,
           actualLeftDepth,
@@ -178,13 +178,13 @@ export class ChunkManager {
         this.buildingPositions.push({ side: 'left', minZ: leftMinZ, maxZ: leftMaxZ, chunkZ });
         buildingsInThisChunk.push({ side: 'left', minZ: leftMinZ, maxZ: leftMaxZ });
         if (balconyConfig.leftHasBalcony) {
-          this.balconies.push({ side: 'left', x: -6.5, z: bz, chunkZ });
+          this.balconies.push({ side: 'left', x: -6.5, z: bz + (Math.random() - 0.5), chunkZ });
         }
       }
 
       const rightHeight = 8 + Math.random() * 12;
-      const rightDepth = 40 + Math.random() * 10;  // Increased from 14 to 40-50 (tripled)
-      const actualRightDepth = Math.min(rightDepth, buildingSpacing - 1);
+      const rightDepth = 14 + Math.random() * 4;  // 14-18 units realistic range
+      const actualRightDepth = Math.min(rightDepth, buildingSpacing - 0.5);
       const rightWorldZ = chunkWorldZ + bz;
       const rightMinZ = rightWorldZ - actualRightDepth / 2;
       const rightMaxZ = rightWorldZ + actualRightDepth / 2;
@@ -199,7 +199,7 @@ export class ChunkManager {
       
       if (!rightOverlaps) {
       const rightBuilding = this.buildingBuilder.build(
-        { x: 6.5, y: 0.15, z: bz },
+        { x: 4.2, y: 0.15, z: bz + (Math.random() - 0.5) + (Math.random() - 0.5) },
           2.5,
           rightHeight,
           actualRightDepth,
@@ -216,7 +216,7 @@ export class ChunkManager {
         this.buildingPositions.push({ side: 'right', minZ: rightMinZ, maxZ: rightMaxZ, chunkZ });
         buildingsInThisChunk.push({ side: 'right', minZ: rightMinZ, maxZ: rightMaxZ });
         if (balconyConfig.rightHasBalcony) {
-          this.balconies.push({ side: 'right', x: 6.5, z: bz, chunkZ });
+          this.balconies.push({ side: 'right', x: 6.5, z: bz + (Math.random() - 0.5), chunkZ });
         }
       }
     }
@@ -415,7 +415,7 @@ export class ChunkManager {
     
     for (let i = 0; i < obstacleCount; i++) {
       const side = Math.random() > 0.5 ? 'left' : 'right';
-      const sidewalkX = side === 'left' ? -4.0 : 4.0;
+      const sidewalkX = side === 'left' ? -3.5 : 3.5;
       const localZ = -length/2 + 10 + (i * spawnInterval) + Math.random() * 8;
       const worldZ = chunkZ + localZ;
       
@@ -556,12 +556,12 @@ export class ChunkManager {
     for (let b = 0; b < numBuildings; b++) {
       const bz = -CHUNK_SIZE / 2 + buildingSpacing / 2 + b * buildingSpacing;
       const leftHeight = 8 + Math.random() * 12;
-      const leftDepth = 40 + Math.random() * 10;  // Increased from 14 to 40-50 (tripled)
+      const leftDepth = 14 + Math.random() * 4;  // 14-18 units realistic range
       const leftBuilding = this.buildingBuilder.build(
-        { x: -6.5, y: 0, z: bz },
+        { x: -6.5, y: 0, z: bz + (Math.random() - 0.5) + (Math.random() - 0.5) },
         2.5,
         leftHeight,
-        Math.min(leftDepth, buildingSpacing - 1),
+        Math.min(leftDepth, buildingSpacing - 0.5),
         balconyConfig.leftHasBalcony,
         'left'
       );
@@ -574,12 +574,12 @@ export class ChunkManager {
       chunk.add(leftBuilding);
 
       const rightHeight = 8 + Math.random() * 12;
-      const rightDepth = 40 + Math.random() * 10;  // Increased from 14 to 40-50 (tripled)
+      const rightDepth = 14 + Math.random() * 4;  // 14-18 units realistic range
       const rightBuilding = this.buildingBuilder.build(
-        { x: 6.5, y: 0, z: bz },
+        { x: 6.5, y: 0, z: bz + (Math.random() - 0.5) + (Math.random() - 0.5) },
         2.5,
         rightHeight,
-        Math.min(rightDepth, buildingSpacing - 1),
+        Math.min(rightDepth, buildingSpacing - 0.5),
         balconyConfig.rightHasBalcony,
         'right'
       );

@@ -22,7 +22,11 @@ export class CarBuilder {
 
     const color = CAR_COLORS[colorIndex >= 0 ? colorIndex : Math.floor(Math.random() * CAR_COLORS.length)];
     
-    const bodyMat = materialCache.get('m-car-body');
+    const bodyMat = new THREE.MeshStandardMaterial({
+      color: color,
+      roughness: 0.3,
+      metalness: 0.6
+    });
     const cabinMat = materialCache.get('m-dark');
     const wheelMat = materialCache.get('m-black');
     const headlightMat = materialCache.get('m-emissive-yellow');

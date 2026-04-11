@@ -50,41 +50,55 @@ export class CharacterBuilder {
     const armRadius = 0.08;
     const armGeo = new THREE.CylinderGeometry(armRadius, armRadius * 0.9, armLength, 12);
     
-    const leftUpperArm = new THREE.Mesh(armGeo, shirtMat);
-    leftUpperArm.position.set(-0.45, 1.25, 0);
-    leftUpperArm.castShadow = false;
-    group.add(leftUpperArm);
+    // Arm groups for animation
+    const leftArmGroup = new THREE.Group();
+    leftArmGroup.name = 'leftArm';
+    leftArmGroup.position.set(-0.22, 1.4, 0);
     
-    const rightUpperArm = new THREE.Mesh(armGeo, shirtMat);
-    rightUpperArm.position.set(0.45, 1.25, 0);
-    rightUpperArm.castShadow = false;
-    group.add(rightUpperArm);
+    const leftUpperArm = new THREE.Mesh(armGeo, shirtMat);
+    leftUpperArm.position.set(0, -armLength / 2, 0);
+    leftUpperArm.castShadow = false;
+    leftArmGroup.add(leftUpperArm);
     
     const forearmLength = 0.3;
     const forearmGeo = new THREE.CylinderGeometry(armRadius * 0.85, armRadius * 0.8, forearmLength, 12);
     
     const leftForearm = new THREE.Mesh(forearmGeo, skinMat);
-    leftForearm.position.set(-0.45, 0.95, 0);
+    leftForearm.position.set(0, -armLength - forearmLength / 2 + 0.02, 0);
     leftForearm.castShadow = false;
-    group.add(leftForearm);
-    
-    const rightForearm = new THREE.Mesh(forearmGeo, skinMat);
-    rightForearm.position.set(0.45, 0.95, 0);
-    rightForearm.castShadow = false;
-    group.add(rightForearm);
+    leftArmGroup.add(leftForearm);
     
     const handGeo = new THREE.SphereGeometry(0.08, 8, 8);
     handGeo.scale(1, 0.7, 1.2);
     
     const leftHand = new THREE.Mesh(handGeo, skinMat);
-    leftHand.position.set(-0.45, 0.65, 0);
+    leftHand.position.set(0, -armLength - forearmLength - 0.1, 0);
     leftHand.castShadow = false;
-    group.add(leftHand);
+    leftArmGroup.add(leftHand);
+    
+    group.add(leftArmGroup);
+    
+    const rightArmGroup = new THREE.Group();
+    rightArmGroup.name = 'rightArm';
+    rightArmGroup.position.set(0.22, 1.4, 0);
+    
+    const rightUpperArm = new THREE.Mesh(armGeo, shirtMat);
+    rightUpperArm.position.set(0, -armLength / 2, 0);
+    rightUpperArm.castShadow = false;
+    rightArmGroup.add(rightUpperArm);
+    
+    const rightForearm = new THREE.Mesh(forearmGeo, skinMat);
+    rightForearm.position.set(0, -armLength - forearmLength / 2 + 0.02, 0);
+    rightForearm.castShadow = false;
+    rightArmGroup.add(rightForearm);
     
     const rightHand = new THREE.Mesh(handGeo, skinMat);
-    rightHand.position.set(0.45, 0.65, 0);
+    rightHand.position.set(0, -armLength - forearmLength - 0.1, 0);
     rightHand.castShadow = false;
-    group.add(rightHand);
+    rightArmGroup.add(rightHand);
+    
+    group.add(rightArmGroup);
+    
     const legLength = 0.9;
     const legRadius = 0.12;
     const legGeo = new THREE.CylinderGeometry(legRadius * 0.9, legRadius, legLength, 12);
@@ -121,6 +135,8 @@ export class CharacterBuilder {
 
     group.position.set(position.x, position.y, position.z);
     group.userData.hairMesh = hair;
+    group.userData.leftArm = leftArmGroup;
+    group.userData.rightArm = rightArmGroup;
     group.userData.leftLeg = leftLegGroup;
     group.userData.rightLeg = rightLegGroup;
     return group;

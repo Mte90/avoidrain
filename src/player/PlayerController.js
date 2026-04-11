@@ -50,6 +50,8 @@ export class PlayerController {
   _findLegs() {
     this.leftLeg = this.group.getObjectByName('leftLeg');
     this.rightLeg = this.group.getObjectByName('rightLeg');
+    this.leftArm = this.group.getObjectByName('leftArm');
+    this.rightArm = this.group.getObjectByName('rightArm');
   }
   
   setCamera(camera) {
@@ -111,6 +113,14 @@ export class PlayerController {
       this.rightLeg.rotation.x = -swing;
     }
     
+    // Animate arms (opposite to legs)
+    if (this.leftArm && this.rightArm) {
+      const time = performance.now() * 0.001;
+      const swing = Math.sin(time * this.legAnimationSpeed) * this.legSwingAngle;
+      this.leftArm.rotation.x = -swing;
+      this.rightArm.rotation.x = swing;
+    }
+    
     // Update camera follow
     if (this.camera) {
       const targetCameraPos = new THREE.Vector3(
@@ -149,18 +159,21 @@ export class PlayerController {
       const obstacleBox = new THREE.Box3().setFromObject(obs.mesh);
       if (playerBox.intersectsBox(obstacleBox)) {
         const dist = this.group.position.distanceTo(obs.mesh.position);
-        if (dist > 0) {
-          const pushDirection = new THREE.Vector3().subVectors(this.group.position, obs.mesh.position).normalize();
-          pushDirection.y = 0;
-          this.group.position.add(pushDirection.multiplyScalar(0.5));
-          // Always return to center of the correct sidewalk
-          const targetX = obs.userData.side === 'left' ? -3.5 : 3.5;
-          this.group.position.x = targetX;
-          // Reset transition state and side to ensure player is centered correctly
-          this.isTransitioning = false;
-          this.currentSide = (obs.userData.side === 'left');
-        }
-      }
+      if (dist > 0) {
+        const pushDirection = new THREE.Vector3().subVectors(this.group.position, obs.mesh.position).normalize();
+        pushDirection.y = 0;
+        this.group.position.add(pushDirection.multiplyScalar(0.5));
+        
+        // Use transition system to smoothly return to center of sidewalk
+        const obstacleSide = obs.userData.side === 'left' ? 'left' : 'right';
+        const targetX = obstacleSide === 'left' ? this.LEFT_SIDE : this.RIGHT_SIDE;
+        
+        this.isTransitioning = true;
+        this.transitionElapsed = 0;
+        this.startX = this.group.position.x;
+        this.targetX = targetX;
+        this.currentSide = (obstacleSide === 'right');
+      }      }
     }
   }
   

@@ -77,16 +77,13 @@ export class BuildingBuilder {
         windowFrame.receiveShadow = false;
         group.add(windowFrame);
 
-        // Randomly lit windows (yellow) or dark (black)
         const isLit = Math.random() > 0.4;
-        const glassGeo = new THREE.PlaneGeometry(windowWidth - 0.1, windowHeight - 0.1);
-        const glassColor = isLit ? 0xFFFF00 : 0x1a1a1a;
-        const glassMat = isLit 
-          ? materialCache.get('m-emissive-yellow')
-          : materialCache.get('m-black');
+        const glassGeo = new THREE.BoxGeometry(0.08, windowHeight - 0.1, windowWidth - 0.1);
+        const glassMat = new THREE.MeshBasicMaterial({
+          color: isLit ? 0xFFFF00 : 0x222222
+        });
         const glass = new THREE.Mesh(glassGeo, glassMat);
-        glass.position.set(facadeX + (roadDir * 0.05), y, z);
-        glass.rotation.y = -Math.PI / 2 * roadDir;
+        glass.position.set(facadeX + (roadDir * 0.03), y, z);
         glass.castShadow = false;
         group.add(glass);
       }
@@ -165,9 +162,9 @@ export class BuildingBuilder {
         group.add(balconyWindowFrame);
 
         const balconyGlassGeo = new THREE.PlaneGeometry(balconyWindowWidth - 0.1, balconyWindowHeight - 0.1);
-        const balconyGlassMat = materialCache.get('m-emissive-yellow');
+        const balconyGlassMat = new THREE.MeshBasicMaterial({ color: 0xFFFF00 });
         const balconyGlass = new THREE.Mesh(balconyGlassGeo, balconyGlassMat);
-        balconyGlass.position.set(facadeX + (roadDir * 0.05), balconyWindowY + balconyWindowHeight / 2, balconyWindowZ);
+        balconyGlass.position.set(facadeX + (roadDir * 0.03), balconyWindowY + balconyWindowHeight / 2, balconyWindowZ);
         balconyGlass.rotation.y = -Math.PI / 2 * roadDir;
         balconyGlass.castShadow = false;
         group.add(balconyGlass);
@@ -194,13 +191,13 @@ export class BuildingBuilder {
 
         // Door handle - attached to door surface facing road
         const handleGeo = new THREE.CylinderGeometry(0.025, 0.025, 0.12, 8);
-        const handleMat = materialCache.get('m-metal');
+        const handleMat = materialCache.get('m-red');
         const handle = new THREE.Mesh(handleGeo, handleMat);
         handle.rotation.x = Math.PI / 2;
-        // Position on the door surface facing the road
-        handle.position.set(facadeX + (roadDir * doorThickness), doorY - 0.25, 0.35);
+        // Position relative to door center (door is at facadeX + roadDir * doorThickness/2)
+        handle.position.set(roadDir * doorThickness / 2 + doorThickness, -0.25, 0.35);
         handle.castShadow = false;
-        group.add(handle);
+        door.add(handle); // Add to door so it moves with door
       }
     }
 
