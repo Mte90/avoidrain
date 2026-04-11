@@ -77,16 +77,7 @@ export class BuildingBuilder {
         windowFrame.receiveShadow = false;
         group.add(windowFrame);
 
-        const glassGeo = new THREE.BoxGeometry(0.04, windowHeight, windowWidth);
-        const isLit = Math.random() > 0.5;
-        const windowMatToUse = isLit 
-          ? materialCache.get('m-yellow') 
-          : materialCache.get('m-gray');
-        const windowGlass = new THREE.Mesh(glassGeo, windowMatToUse);
-        windowGlass.position.set(facadeX + roadDir * (-0.03), y, z);  // Glass faces road (negative offset)
-        windowGlass.castShadow = false;
-        windowGlass.receiveShadow = false;
-        group.add(windowGlass);
+
       }
     }
 
@@ -162,12 +153,7 @@ export class BuildingBuilder {
         balconyWindowFrame.castShadow = false;
         balconyWindowFrame.receiveShadow = false;
         group.add(balconyWindowFrame);
-        const balconyWindowGlassGeo = new THREE.BoxGeometry(0.04, balconyWindowHeight, balconyWindowWidth);
-        const balconyWindowGlass = new THREE.Mesh(balconyWindowGlassGeo, materialCache.get('m-yellow'));
-        balconyWindowGlass.position.set(facadeX + roadDir * (-0.03), balconyWindowY, balconyWindowZ);
-        balconyWindowGlass.castShadow = false;
-        balconyWindowGlass.receiveShadow = false;
-        group.add(balconyWindowGlass);
+
 
         const doorHeight = 2.1;  // Standard door height
         const doorWidth = 1.0;
@@ -178,11 +164,7 @@ export class BuildingBuilder {
         doorFrame.castShadow = false;
         group.add(doorFrame);
 
-        const doorGlassGeo = new THREE.BoxGeometry(0.04, doorHeight, doorWidth);
-        const doorGlass = new THREE.Mesh(doorGlassGeo, materialCache.get('m-dark'));
-        doorGlass.position.set(facadeX + roadDir * 0.03, doorY, 0);
-        doorGlass.castShadow = false;
-        group.add(doorGlass);
+
       }
     }
 

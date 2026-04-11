@@ -9,7 +9,7 @@ import { ObstacleBuilder } from './ObstacleBuilder.js';
 import { DifficultyManager } from '../systems/DifficultyManager.js';
 
 const CHUNK_SIZE = 40;
-const MAX_CARS = 8;
+const MAX_CARS = 12;
 const BUILDING_ZONE_LEFT = { min: -6, max: -3.5 };
 const BUILDING_ZONE_RIGHT = { min: 3.5, max: 6 };
 const SIDEWALK_ZONE_LEFT = { min: -4.5, max: -2.5 };
@@ -402,7 +402,7 @@ export class ChunkManager {
       this.obstacleBuilder = new ObstacleBuilder();
     }
     const length = CHUNK_SIZE;
-    const obstacleCount = 1;
+    const obstacleCount = 3;
     const spawnInterval = 20;
     
     const obstacleTypes = ['trashCan', 'bench', 'sign'];
