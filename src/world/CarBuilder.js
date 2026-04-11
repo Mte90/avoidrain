@@ -35,29 +35,58 @@ export class CarBuilder {
     const rimMat = materialCache.get('m-car-rim');
     const mirrorMat = materialCache.get('m-car-mirror');
     const housingMat = materialCache.get('m-black');
-
-    // Realistic car proportions (sedan)
+    
     const bodyLength = 4.5;
     const bodyWidth = 1.7;
-    const bodyHeight = 1.4;
-    const wheelRadius = 0.3;
+    const bodyHeight = 1.0;
+    const wheelRadius = 0.35;
     
-    const bodyGeo = new THREE.BoxGeometry(bodyLength, bodyHeight, bodyWidth);
-    const body = new THREE.Mesh(bodyGeo, bodyMat);
-    body.position.y = (bodyHeight / 2) + wheelRadius;
-    body.castShadow = true;
-    body.receiveShadow = true;
-    group.add(body);
-
-    const cabinLength = 2.8;
-    const cabinWidth = 1.4;
-    const cabinHeight = 1.2;
+    const mainBodyGeo = new THREE.BoxGeometry(3.8, 0.7, bodyWidth);
+    const mainBody = new THREE.Mesh(mainBodyGeo, bodyMat);
+    mainBody.position.y = 0.35 + wheelRadius;
+    mainBody.castShadow = true;
+    mainBody.receiveShadow = true;
+    group.add(mainBody);
+    
+    const hoodGeo = new THREE.BoxGeometry(1.2, 0.4, bodyWidth - 0.1);
+    const hood = new THREE.Mesh(hoodGeo, bodyMat);
+    hood.position.set(1.8, 0.6 + wheelRadius, 0);
+    hood.rotation.z = -0.15;
+    hood.castShadow = true;
+    group.add(hood);
+    
+    const cabinLength = 2.0;
+    const cabinWidth = 1.5;
+    const cabinHeight = 0.8;
     const cabinGeo = new THREE.BoxGeometry(cabinLength, cabinHeight, cabinWidth);
     const cabin = new THREE.Mesh(cabinGeo, cabinMat);
-    cabin.position.set(-0.2, body.position.y + (bodyHeight / 2) + (cabinHeight / 2), 0);
+    cabin.position.set(-0.3, 1.0 + wheelRadius, 0);
     cabin.castShadow = true;
     group.add(cabin);
-
+    
+    const windshieldGeo = new THREE.BoxGeometry(0.08, 0.65, 1.3);
+    const windshield = new THREE.Mesh(windshieldGeo, cabinMat);
+    windshield.position.set(0.7, 1.0 + wheelRadius, 0);
+    windshield.rotation.z = 0.6;
+    group.add(windshield);
+    
+    const rearWindowGeo = new THREE.BoxGeometry(0.08, 0.55, 1.3);
+    const rearWindow = new THREE.Mesh(rearWindowGeo, cabinMat);
+    rearWindow.position.set(-1.2, 1.0 + wheelRadius, 0);
+    rearWindow.rotation.z = -0.5;
+    group.add(rearWindow);
+    
+    const frontFenderGeo = new THREE.BoxGeometry(0.8, 0.5, bodyWidth + 0.1);
+    const frontFenderLeft = new THREE.Mesh(frontFenderGeo, bodyMat);
+    frontFenderLeft.position.set(2.0, 0.4 + wheelRadius, 0);
+    frontFenderLeft.rotation.z = 0.2;
+    group.add(frontFenderLeft);
+    
+    const rearFenderGeo = new THREE.BoxGeometry(1.0, 0.5, bodyWidth + 0.1);
+    const rearFenderRight = new THREE.Mesh(rearFenderGeo, bodyMat);
+    rearFenderRight.position.set(-1.6, 0.4 + wheelRadius, 0);
+    rearFenderRight.rotation.z = 0.1;
+    group.add(rearFenderRight);
     const wheelWidth = 0.2;
     const wheelGeo = new THREE.CylinderGeometry(wheelRadius, wheelRadius, wheelWidth, 16);
     wheelGeo.rotateX(Math.PI / 2);
@@ -82,59 +111,60 @@ export class CarBuilder {
       group.add(rim);
     }
 
-    const headlightGeo = new THREE.BoxGeometry(0.3, 0.2, 0.1);
+    const headlightGeo = new THREE.BoxGeometry(0.15, 0.15, 0.25);
     const leftHeadlight = new THREE.Mesh(headlightGeo, headlightMat);
-    leftHeadlight.position.set(-2.15, 1.0, 0.6);
+    leftHeadlight.position.set(2.25, 0.5 + wheelRadius, 0.55);
     group.add(leftHeadlight);
     
     const rightHeadlight = new THREE.Mesh(headlightGeo, headlightMat);
-    rightHeadlight.position.set(-2.15, 1.0, -0.6);
+    rightHeadlight.position.set(2.25, 0.5 + wheelRadius, -0.55);
     group.add(rightHeadlight);
     
     const leftHeadlightPoint = new THREE.PointLight(0xffffcc, 1, 15);
-    leftHeadlightPoint.position.set(-2.15, 1.0, 0.8);
+    leftHeadlightPoint.position.set(2.3, 0.5 + wheelRadius, 0.7);
     group.add(leftHeadlightPoint);
     
     const rightHeadlightPoint = new THREE.PointLight(0xffffcc, 1, 15);
-    rightHeadlightPoint.position.set(-2.15, 1.0, -0.8);
+    rightHeadlightPoint.position.set(2.3, 0.5 + wheelRadius, -0.7);
     group.add(rightHeadlightPoint);
-    const housingGeo = new THREE.BoxGeometry(0.25, 0.2, 0.1);
+    
+    const housingGeo = new THREE.BoxGeometry(0.15, 0.2, 0.3);
     const leftHousing = new THREE.Mesh(housingGeo, housingMat);
-    leftHousing.position.set(-2.15, 1.0, 0.6);
+    leftHousing.position.set(2.25, 0.5 + wheelRadius, 0.55);
     group.add(leftHousing);
 
     const rightHousing = new THREE.Mesh(housingGeo, housingMat);
-    rightHousing.position.set(-2.15, 1.0, -0.6);
+    rightHousing.position.set(2.25, 0.5 + wheelRadius, -0.55);
     group.add(rightHousing);
 
-    const taillightGeo = new THREE.BoxGeometry(0.08, 0.15, 0.2);
+    const taillightGeo = new THREE.BoxGeometry(0.05, 0.12, 0.2);
     const leftTaillight = new THREE.Mesh(taillightGeo, taillightMat);
-    leftTaillight.position.set(2.15, 1.0, 0.5);
+    leftTaillight.position.set(-1.85, 0.5 + wheelRadius, 0.5);
     group.add(leftTaillight);
 
     const rightTaillight = new THREE.Mesh(taillightGeo, taillightMat);
-    rightTaillight.position.set(2.15, 1.0, -0.5);
+    rightTaillight.position.set(-1.85, 0.5 + wheelRadius, -0.5);
     group.add(rightTaillight);
 
-    const bumperGeo = new THREE.BoxGeometry(0.15, 0.3, bodyWidth - 0.2);
+    const bumperGeo = new THREE.BoxGeometry(0.12, 0.25, bodyWidth - 0.1);
     const frontBumper = new THREE.Mesh(bumperGeo, bumperMat);
-    frontBumper.position.set(-2.1, 0.6, 0);
+    frontBumper.position.set(2.3, 0.25 + wheelRadius, 0);
     frontBumper.castShadow = true;
     group.add(frontBumper);
 
     const rearBumper = new THREE.Mesh(bumperGeo, bumperMat);
-    rearBumper.position.set(2.1, 0.6, 0);
+    rearBumper.position.set(-1.95, 0.25 + wheelRadius, 0);
     rearBumper.castShadow = true;
     group.add(rearBumper);
 
-    const mirrorGeo = new THREE.BoxGeometry(0.15, 0.15, 0.15);
+    const mirrorGeo = new THREE.BoxGeometry(0.12, 0.1, 0.15);
     
     const leftMirror = new THREE.Mesh(mirrorGeo, mirrorMat);
-    leftMirror.position.set(-1.0, 1.1, 0.85);
+    leftMirror.position.set(0.3, 1.0 + wheelRadius, 0.8);
     group.add(leftMirror);
 
     const rightMirror = new THREE.Mesh(mirrorGeo, mirrorMat);
-    rightMirror.position.set(-1.0, 1.1, -0.85);
+    rightMirror.position.set(0.3, 1.0 + wheelRadius, -0.8);
     group.add(rightMirror);
 
     group.position.set(position.x, position.y, position.z);

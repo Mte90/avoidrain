@@ -51,7 +51,7 @@ export class BuildingBuilder {
     // Track balcony Y positions to avoid placing windows under balconies
     const balconyYPositions = [];
     if (hasBalcony) {
-      const balconyFloorY = bottomY + height * 0.4;
+      const balconyFloorY = bottomY + height * 0.35;
       balconyYPositions.push(balconyFloorY);
     }
 
@@ -100,7 +100,7 @@ export class BuildingBuilder {
       const balconyProtrusion = 2.5;
       const balconyLength = depth - 1;  // Almost full building length
       const numBalconies = Math.random() > 0.5 ? 2 : 1;  // 1-2 balconies random
-      const balconyFloorY = bottomY + height * 0.4;
+      const balconyFloorY = bottomY + height * 0.35;
       
       for (let b = 0; b < numBalconies; b++) {
         const currentBalconyY = balconyFloorY;
@@ -150,7 +150,7 @@ export class BuildingBuilder {
         rightSideRail.castShadow = false;
         group.add(rightSideRail);
 
-        const balconyWindowY = currentBalconyY - 0.05;
+        const balconyWindowY = currentBalconyY;
         const balconyWindowZ = 0;
         const balconyWindowWidth = 1.5;
         const balconyWindowHeight = 1.8;

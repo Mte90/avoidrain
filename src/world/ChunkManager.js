@@ -144,8 +144,8 @@ export class ChunkManager {
     
     for (let b = 0; b < numBuildings; b++) {
       const bz = -CHUNK_SIZE / 2 + buildingSpacing / 2 + b * buildingSpacing;
-      const leftHeight = 8 + Math.random() * 12;
-      const leftDepth = 18 + Math.random() * 8;  // 18-26 units for more depth variation
+      const leftHeight = 6 + Math.random() * 18;  // 6-24 units, more height variety
+      const leftDepth = 30 + Math.random() * 20;  // 30-50 units, much deeper
       const actualLeftDepth = Math.min(leftDepth, buildingSpacing - 0.5);
       const leftWorldZ = chunkWorldZ + bz;
       const leftMinZ = leftWorldZ - actualLeftDepth / 2;
@@ -181,8 +181,8 @@ export class ChunkManager {
         }
       }
 
-      const rightHeight = 8 + Math.random() * 12;
-      const rightDepth = 18 + Math.random() * 8;  // 18-26 units for more depth variation
+      const rightHeight = 6 + Math.random() * 18;  // 6-24 units
+      const rightDepth = 30 + Math.random() * 20;  // 30-50 units
       const actualRightDepth = Math.min(rightDepth, buildingSpacing - 0.5);
       const rightWorldZ = chunkWorldZ + bz;
       const rightMinZ = rightWorldZ - actualRightDepth / 2;
@@ -311,32 +311,30 @@ export class ChunkManager {
   spawnStreetLampsForChunk(chunk, chunkZ) {
     const streetLampBuilder = new StreetLampBuilder();
     const length = CHUNK_SIZE;
-    const spawnInterval = 25 + Math.random() * 10;
+    const spawnInterval = 30 + Math.random() * 15;
     const buildingsInChunk = chunk.userData.buildings || [];
+    const chunkBalconies = this.balconies.filter(b => b.chunkZ === chunkZ);
     
     
-    for (let localZ = -length / 2 + 5; localZ < length / 2; localZ += spawnInterval) {
+    for (let localZ = -length / 2 + 8; localZ < length / 2; localZ += spawnInterval) {
       const worldZ = chunkZ + localZ;
-      const leftHasBuilding = buildingsInChunk.some(b => b.side === 'left' && worldZ >= b.minZ && worldZ <= b.maxZ);
-      const rightHasBuilding = buildingsInChunk.some(b => b.side === 'right' && worldZ >= b.minZ && worldZ <= b.maxZ);
       
-      // Alternate left/right lamps (not pairs)
-      let isLeftLamp = (Math.floor((localZ - (-length / 2 + 5)) / spawnInterval) % 2 === 0);
+      let isLeftLamp = (Math.floor((localZ - (-length / 2 + 8)) / spawnInterval) % 2 === 0);
       
-      const leftBalconyZ = buildingsInChunk.filter(b => b.side === 'left').map(b => ({ minZ: b.minZ, maxZ: b.maxZ, balconyZ: b.balconyZ || [], balconyHeight: b.balconyHeight || 0 }));
-      const rightBalconyZ = buildingsInChunk.filter(b => b.side === 'right').map(b => ({ minZ: b.minZ, maxZ: b.maxZ, balconyZ: b.balconyZ || [], balconyHeight: b.balconyHeight || 0 }));
+      const hasBalconyAtLeft = chunkBalconies.some(b => 
+        b.side === 'left' && Math.abs(b.z - localZ) < 3
+      );
+      const hasBalconyAtRight = chunkBalconies.some(b => 
+        b.side === 'right' && Math.abs(b.z - localZ) < 3
+      );
       
-      const hasLeftBalconyOverlap = leftBalconyZ.some(b => {
-        const isLowBalcony = b.balconyHeight < 4;
-        return isLowBalcony && b.balconyZ && b.balconyZ.some(bz => Math.abs(bz - localZ) < 5);
-      });
-      const hasRightBalconyOverlap = rightBalconyZ.some(b => {
-        const isLowBalcony = b.balconyHeight < 4;
-        return isLowBalcony && b.balconyZ && b.balconyZ.some(bz => Math.abs(bz - localZ) < 5);
-      });
+      if (isLeftLamp && hasBalconyAtLeft) {
+        continue;
+      } else if (!isLeftLamp && hasBalconyAtRight) {
+        continue;
+      }
       
-      if (!hasLeftBalconyOverlap && isLeftLamp) {
-        // Move lamp to middle of sidewalk (x: ±3.5 instead of ±3.0)
+      if (isLeftLamp) {
         const leftLamp = streetLampBuilder.build({ x: -3.5, y: 0.15, z: 0 });
         leftLamp.position.z = localZ;
         leftLamp.traverse((child) => {
@@ -347,8 +345,7 @@ export class ChunkManager {
         });
         chunk.add(leftLamp);
         this.lamps.push({ mesh: leftLamp, chunkZ, side: 'left' });
-      } else if (!hasRightBalconyOverlap && !isLeftLamp) {
-        // Move lamp to middle of sidewalk (x: ±3.5 instead of ±3.0)
+      } else {
         const rightLamp = streetLampBuilder.build({ x: 3.5, y: 0.15, z: 0 });
         rightLamp.position.z = localZ;
         rightLamp.traverse((child) => {
@@ -387,7 +384,7 @@ export class ChunkManager {
           }
         }
 
-        const puddle = this.puddleBuilder.build({ x: puddleX, y: 0.18, z: z });
+        const puddle = this.puddleBuilder.build({ x: puddleX, y: 0.02, z: z });
         puddle.traverse((child) => {
           if (child.isMesh) {
             child.castShadow = false;
@@ -434,6 +431,16 @@ export class ChunkManager {
         }
       }
       if (tooClose) continue;
+      
+      const doorZones = [5, 15, 25, 35];
+      let nearDoor = false;
+      for (const doorZ of doorZones) {
+        if (Math.abs(localZ - doorZ) < 3) {
+          nearDoor = true;
+          break;
+        }
+      }
+      if (nearDoor) continue;
       
       usedPositions.push({ side, z: localZ });
       
@@ -554,8 +561,8 @@ export class ChunkManager {
     const buildingSpacing = CHUNK_SIZE / numBuildings;
     for (let b = 0; b < numBuildings; b++) {
       const bz = -CHUNK_SIZE / 2 + buildingSpacing / 2 + b * buildingSpacing;
-      const leftHeight = 8 + Math.random() * 12;
-      const leftDepth = 14 + Math.random() * 4;  // 14-18 units realistic range
+      const leftHeight = 6 + Math.random() * 18;
+      const leftDepth = 30 + Math.random() * 20;
       const leftBuilding = this.buildingBuilder.build(
         { x: -6.0, y: 0.15, z: bz + (Math.random() - 0.5) },
         2.5,
@@ -572,8 +579,8 @@ export class ChunkManager {
       });
       chunk.add(leftBuilding);
 
-      const rightHeight = 8 + Math.random() * 12;
-      const rightDepth = 14 + Math.random() * 4;  // 14-18 units realistic range
+      const rightHeight = 6 + Math.random() * 18;
+      const rightDepth = 30 + Math.random() * 20;
       const rightBuilding = this.buildingBuilder.build(
         { x: 6.0, y: 0.15, z: bz + (Math.random() - 0.5) },
         2.5,
@@ -589,6 +596,13 @@ export class ChunkManager {
         }
       });
       chunk.add(rightBuilding);
+      
+      if (balconyConfig.leftHasBalcony) {
+        this.balconies.push({ side: 'left', x: -6.5, z: bz + (Math.random() - 0.5), chunkZ });
+      }
+      if (balconyConfig.rightHasBalcony) {
+        this.balconies.push({ side: 'right', x: 6.5, z: bz + (Math.random() - 0.5), chunkZ });
+      }
     }
     this.spawnCarsForChunk(chunk, chunkZ);
     this.spawnStreetLampsForChunk(chunk, chunkZ);

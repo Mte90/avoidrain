@@ -12,6 +12,9 @@ export class CollisionManager {
     this.blinkTimer = 0;
     this.blinkState = true;
     this.nextBlinkToggle = 0;
+    
+    this.obstacleCooldown = 0;
+    this.obstacleCooldownDuration = 0.8;
   }
 
   /**

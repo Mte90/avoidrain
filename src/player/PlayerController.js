@@ -46,7 +46,7 @@ export class PlayerController {
     this._findLegs();
     
     // Camera follow - moved lower (was 5, 8)
-    this.cameraOffset = new THREE.Vector3(0, 3.5, 6);
+    this.cameraOffset = new THREE.Vector3(0, 2.5, 5);
     this.cameraLerpSpeed = 3.0;
     this.camera = null;
   }
@@ -76,7 +76,7 @@ export class PlayerController {
     this.targetX = this.currentSide ? this.RIGHT_SIDE : this.LEFT_SIDE;
   }
   
-  update(delta) {
+  update(delta, chunkManager = null) {
     // Handle input for lane switching
     const direction = this.input.getDirection();
     if (direction.x !== 0 && !this.isTransitioning) {
@@ -85,6 +85,11 @@ export class PlayerController {
       if (shouldSwitch) {
         this.switchSide();
       }
+    }
+    
+    
+    if (chunkManager) {
+      this.setPosition(this.group.position.z, chunkManager);
     }
     
     // Update lane transition with lerp
@@ -174,7 +179,9 @@ export class PlayerController {
         this.group.position.add(pushDirection.multiplyScalar(0.5));
         
         // Use transition system to smoothly return to center of sidewalk
-        const obstacleSide = obs.userData.side === 'left' ? 'left' : 'right';
+        // Determine side from obstacle position, not from userData (might be missing)
+        const obsX = obs.mesh.position.x;
+        const obstacleSide = obsX < 0 ? 'left' : 'right';
         const targetX = obstacleSide === 'left' ? this.LEFT_SIDE : this.RIGHT_SIDE;
         
         this.isTransitioning = true;

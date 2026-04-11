@@ -70,7 +70,7 @@ export class ObstacleBuilder {
     const benchWidth = 2.5;
     const benchHeight = 0.5;
     const benchDepth = 0.4;
-    const seatHeight = 0.6;
+    const seatHeight = 0.45;
     
     // Seat
     const seatGeo = new THREE.BoxGeometry(benchWidth, benchHeight, benchDepth);
@@ -167,10 +167,7 @@ export class ObstacleBuilder {
     const signGeo = new THREE.BoxGeometry(signWidth, signHeight, 0.02);
     const sign = new THREE.Mesh(signGeo, signMat);
     sign.position.set(0, poleHeight + signHeight / 2, 0);
-    // Sign should face toward the road (player)
-    // Left side: sign faces right (toward road at x=0)
-    // Right side: sign faces left (toward road at x=0)
-    sign.rotation.y = side === 'left' ? Math.PI / 2 : -Math.PI / 2;
+    sign.rotation.y = 0;
     sign.castShadow = false;
     group.add(sign);
     
