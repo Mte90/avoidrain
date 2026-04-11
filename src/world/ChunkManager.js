@@ -432,10 +432,10 @@ export class ChunkManager {
       }
       if (tooClose) continue;
       
-      const doorZones = [5, 15, 25, 35];
+      const doorZones = [3, 8, 13, 18, 23, 28, 33, 38];
       let nearDoor = false;
       for (const doorZ of doorZones) {
-        if (Math.abs(localZ - doorZ) < 3) {
+        if (Math.abs(localZ - doorZ) < 4) {
           nearDoor = true;
           break;
         }
@@ -446,7 +446,8 @@ export class ChunkManager {
       
       const type = obstacleTypes[Math.floor(Math.random() * obstacleTypes.length)];
       const obstacle = this.obstacleBuilder.build({ x: 0, y: 0, z: 0 }, type, side);
-      obstacle.position.set(sidewalkX, 0.5, localZ);
+      const benchX = type === 'bench' ? (side === 'left' ? -4.5 : 4.5) : sidewalkX;
+      obstacle.position.set(benchX, 0.5, localZ);
       
       obstacle.userData.side = side;
       obstacle.userData.obstacleType = type;

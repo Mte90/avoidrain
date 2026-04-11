@@ -71,7 +71,7 @@ export class MaterialCache {
       ['m-eye', 0xFFFFFF, 0.3, 0.0],
       ['m-pupil', 0x000000, 0.9, 0.0],
       ['m-backdrop', 0x3a3a3a, 0.8, 0.1],
-      ['puddle', 0x3a5a7a, 0.02, 0.90],
+      ['puddle', 0x88aabb, 0.01, 0.95],
       ['m-white', 0xFFFFFF, 0.9, 0.02],
       ['m-portal', 0x9333EA, 0.4, 0.8],
       // Emissive materials (essential lights only)

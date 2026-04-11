@@ -70,8 +70,7 @@ export class ObstacleBuilder {
     const benchWidth = 2.5;
     const benchHeight = 0.5;
     const benchDepth = 0.4;
-    const seatHeight = 0.45;
-    
+      const seatHeight = 0.3;    
     // Seat
     const seatGeo = new THREE.BoxGeometry(benchWidth, benchHeight, benchDepth);
     const seat = new THREE.Mesh(seatGeo, woodMat);

@@ -34,11 +34,42 @@ export class CharacterBuilder {
     group.add(torso);
 
     const headSize = 0.32;
-    const headGeo = new THREE.SphereGeometry(headSize, 12, 12);
+    const headGeo = new THREE.SphereGeometry(headSize, 16, 16);
     const head = new THREE.Mesh(headGeo, skinMat);
     head.position.y = hipY + torsoHeight + headSize - 0.05;
+    head.scale.set(1, 1.1, 0.95);
     head.castShadow = false;
     group.add(head);
+    
+    const eyeRadius = 0.055;
+    const eyeGeo = new THREE.SphereGeometry(eyeRadius, 8, 8);
+    const pupilGeo = new THREE.SphereGeometry(eyeRadius * 0.5, 6, 6);
+    const eyeMat = materialCache.get('m-eye');
+    const pupilMat = materialCache.get('m-pupil');
+    
+    const leftEye = new THREE.Mesh(eyeGeo, eyeMat);
+    leftEye.position.set(-0.1, hipY + torsoHeight + headSize + 0.02, headSize * 0.8);
+    leftEye.scale.set(1, 1.1, 0.5);
+    group.add(leftEye);
+    const leftPupil = new THREE.Mesh(pupilGeo, pupilMat);
+    leftPupil.position.set(-0.1, hipY + torsoHeight + headSize + 0.02, headSize * 0.85);
+    leftPupil.scale.set(1, 1.1, 0.5);
+    group.add(leftPupil);
+    
+    const rightEye = new THREE.Mesh(eyeGeo, eyeMat);
+    rightEye.position.set(0.1, hipY + torsoHeight + headSize + 0.02, headSize * 0.8);
+    rightEye.scale.set(1, 1.1, 0.5);
+    group.add(rightEye);
+    const rightPupil = new THREE.Mesh(pupilGeo, pupilMat);
+    rightPupil.position.set(0.1, hipY + torsoHeight + headSize + 0.02, headSize * 0.85);
+    rightPupil.scale.set(1, 1.1, 0.5);
+    group.add(rightPupil);
+    
+    const noseGeo = new THREE.ConeGeometry(0.03, 0.08, 6);
+    const nose = new THREE.Mesh(noseGeo, skinMat);
+    nose.position.set(0, hipY + torsoHeight + headSize - 0.02, headSize * 0.9);
+    nose.rotation.x = Math.PI / 2;
+    group.add(nose);
 
     const hairGeo = new THREE.SphereGeometry(headSize * 1.15, 16, 16, 0, Math.PI * 2, 0, Math.PI / 1.8);
     const hair = new THREE.Mesh(hairGeo, hairMat);

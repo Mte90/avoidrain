@@ -168,6 +168,20 @@ export class BuildingBuilder {
         balconyGlass.rotation.y = -Math.PI / 2 * roadDir;
         balconyGlass.castShadow = false;
         group.add(balconyGlass);
+        
+        // Add moving shadow person behind balcony window
+        const shadowPersonGeo = new THREE.PlaneGeometry(0.6, 1.6);
+        const shadowPersonMat = new THREE.MeshBasicMaterial({ 
+          color: 0x000000, 
+          transparent: true, 
+          opacity: 0.6,
+          side: THREE.DoubleSide
+        });
+        const shadowPerson = new THREE.Mesh(shadowPersonGeo, shadowPersonMat);
+        shadowPerson.position.set(facadeX + (roadDir * -0.05), balconyWindowY + 0.8, balconyWindowZ);
+        shadowPerson.userData.isShadowPerson = true;
+        shadowPerson.userData.offset = Math.random() * Math.PI * 2;
+        group.add(shadowPerson);
 
         const doorHeight = 2.1;
         const doorWidth = 1.0;

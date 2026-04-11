@@ -246,6 +246,9 @@ export class Game {
     
     // Animate antenna blinking lights
     this.animateAntennas(delta);
+    
+    // Animate window shadows and shadow people
+    this.animateShadows(delta);
 
     if (state === GameState.MENU) {
       this.menuDemoManager.update(delta);
@@ -263,8 +266,6 @@ export class Game {
     }
     
     this.rainSystem.setPlayerPosition(playerPos.x, playerPos.y, playerPos.z);
-
-    this.chunkManager.updateCars(delta);
 
     if (state === GameState.PLAYING) {
       this.gameTime += delta;
@@ -355,15 +356,11 @@ export class Game {
       
       this.collisionManager.updateBlink(this.player.getGroup(), delta);
       
-      // After collision, ensure player returns to sidewalk center
-      if (collisionResult.obstacleData && collisionResult.obstacleData.side) {
-        const hitSide = collisionResult.obstacleData.side;
-        const targetX = hitSide === 'left' ? -3.5 : 3.5;
-        // Smoothly move player back to sidewalk center after pushback
-        const playerGroup = this.player.getGroup();
-        if (Math.abs(playerGroup.position.x - targetX) > 0.1) {
-          playerGroup.position.x += (targetX - playerGroup.position.x) * 0.05;
-        }
+      const playerGroup = this.player.getGroup();
+      if (collisionResult.collisionOccurred) {
+        const playerX = playerGroup.position.x;
+        const targetX = playerX < 0 ? -3.5 : 3.5;
+        playerGroup.position.x = targetX;
       }
     }
 
@@ -377,10 +374,11 @@ export class Game {
         playerGroup.position.x -= PLAYER.COLLISION_RECOVERY_SPEED * delta;
       }
       
-      // Additional check: if player is too far from sidewalk center, guide back
-      if (Math.abs(playerGroup.position.x) > 1.0 && Math.abs(playerGroup.position.x) < 2.5) {
-        const targetX = playerGroup.position.x > 0 ? 3.5 : -3.5;
-        playerGroup.position.x += (targetX - playerGroup.position.x) * 0.02;
+      // If player is far from sidewalk center, force back to center
+      if (playerGroup.position.x > 1.0 && playerGroup.position.x < 2.5) {
+        playerGroup.position.x = 3.5;
+      } else if (playerGroup.position.x < -1.0 && playerGroup.position.x > -2.5) {
+        playerGroup.position.x = -3.5;
       }
     }
 
@@ -470,6 +468,15 @@ export class Game {
           const intensity = (Math.sin(this.gameTime * blinkSpeed) + 1) / 2;
           light.material.emissiveIntensity = 0.3 + intensity * 0.7;
         }
+      }
+    });
+  }
+
+  animateShadows(delta) {
+    const time = this.gameTime;
+    this.scene.traverse((child) => {
+      if (child.userData && child.userData.isShadowPerson) {
+        child.position.x = Math.sin(time + child.userData.offset) * 0.3;
       }
     });
   }
