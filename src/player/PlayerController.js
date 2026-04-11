@@ -8,6 +8,7 @@ export class PlayerController {
     
     this.LEFT_SIDE = -3.5;
     this.RIGHT_SIDE = 3.5;
+    this.CENTERS = { left: -3.5, right: 3.5 };
     
     // Current side state (false = left, true = right)
     this.currentSide = false;
@@ -40,8 +41,8 @@ export class PlayerController {
     // Get leg references for animation
     this._findLegs();
     
-    // Camera follow
-    this.cameraOffset = new THREE.Vector3(0, 5, 8);
+    // Camera follow - moved lower (was 5, 8)
+    this.cameraOffset = new THREE.Vector3(0, 3.5, 6);
     this.cameraLerpSpeed = 3.0;
     this.camera = null;
   }
@@ -152,6 +153,12 @@ export class PlayerController {
           const pushDirection = new THREE.Vector3().subVectors(this.group.position, obs.mesh.position).normalize();
           pushDirection.y = 0;
           this.group.position.add(pushDirection.multiplyScalar(0.5));
+          // Always return to center of the correct sidewalk
+          const targetX = obs.userData.side === 'left' ? -3.5 : 3.5;
+          this.group.position.x = targetX;
+          // Reset transition state and side to ensure player is centered correctly
+          this.isTransitioning = false;
+          this.currentSide = (obs.userData.side === 'left');
         }
       }
     }

@@ -63,7 +63,7 @@ export const JUICE = {
 
 export const RAIN = {
   INTENSITY: 0.5,
-  WETNESS_FILL_RATE: 6,
+  WETNESS_FILL_RATE: 15,
   WETNESS_DRAIN_RATE: 20,
   GAME_OVER_THRESHOLD: 100,
 };

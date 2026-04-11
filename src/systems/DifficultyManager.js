@@ -4,13 +4,13 @@ const DIFFICULTY_RAMP_TIME = 60; // seconds to reach max difficulty
 // Starting values (at t=0)
 const INITIAL_RAIN_INTENSITY = 0.5;
 const INITIAL_BALCONY_CHANCE = 0.95;
-const INITIAL_CAR_SPAWN_CHANCE = 0.2;
+const INITIAL_CAR_SPAWN_CHANCE = 0.5;
 const INITIAL_PLAYER_SPEED = 5.0; // meters per second
 
 // Target values (at t=60s)
 const MAX_RAIN_INTENSITY = 1.0;
 const MIN_BALCONY_CHANCE = 0.6;
-const MAX_CAR_SPAWN_CHANCE = 0.6;
+const MAX_CAR_SPAWN_CHANCE = 0.9;
 const MAX_PLAYER_SPEED = 8.0; // 60% faster
 
 /**
@@ -56,9 +56,9 @@ export class DifficultyManager {
   }
 
   /**
-   * Get car spawn chance (20% → 60% over 60s)
+   * Get car spawn chance (50% → 90% over 60s)
    * Higher = harder (more obstacles)
-   * @returns {number} Probability between 0.2 and 0.6
+   * @returns {number} Probability between 0.5 and 0.9
    */
   getCarSpawnChance() {
     return lerp(INITIAL_CAR_SPAWN_CHANCE, MAX_CAR_SPAWN_CHANCE, this.difficulty);

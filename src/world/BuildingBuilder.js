@@ -77,7 +77,13 @@ export class BuildingBuilder {
         windowFrame.receiveShadow = false;
         group.add(windowFrame);
 
-
+        const glassGeo = new THREE.PlaneGeometry(windowWidth - 0.1, windowHeight - 0.1);
+        const glassMat = materialCache.get('m-emissive-yellow');
+        const glass = new THREE.Mesh(glassGeo, glassMat);
+        glass.position.set(facadeX + (roadDir * 0.05), y, z);
+        glass.rotation.y = -Math.PI / 2 * roadDir;
+        glass.castShadow = false;
+        group.add(glass);
       }
     }
 
@@ -142,20 +148,26 @@ export class BuildingBuilder {
         rightSideRail.castShadow = false;
         group.add(rightSideRail);
 
-        const balconyWindowY = currentBalconyY - 0.15;
-        // Position window at balcony edge (right side for both buildings)
-        const balconyWindowZ = 0;  // Edge, not middle
+        const balconyWindowY = currentBalconyY - 0.05;
+        const balconyWindowZ = 0;
         const balconyWindowWidth = 1.5;
         const balconyWindowHeight = 1.8;
         const balconyWindowFrameGeo = new THREE.BoxGeometry(0.06, balconyWindowHeight + 0.08, balconyWindowWidth + 0.08);
         const balconyWindowFrame = new THREE.Mesh(balconyWindowFrameGeo, frameMat);
-        balconyWindowFrame.position.set(facadeX, balconyWindowY, balconyWindowZ);
+        balconyWindowFrame.position.set(facadeX, balconyWindowY + balconyWindowHeight / 2, balconyWindowZ);
         balconyWindowFrame.castShadow = false;
         balconyWindowFrame.receiveShadow = false;
         group.add(balconyWindowFrame);
 
+        const balconyGlassGeo = new THREE.PlaneGeometry(balconyWindowWidth - 0.1, balconyWindowHeight - 0.1);
+        const balconyGlassMat = materialCache.get('m-emissive-yellow');
+        const balconyGlass = new THREE.Mesh(balconyGlassGeo, balconyGlassMat);
+        balconyGlass.position.set(facadeX + (roadDir * 0.05), balconyWindowY + balconyWindowHeight / 2, balconyWindowZ);
+        balconyGlass.rotation.y = -Math.PI / 2 * roadDir;
+        balconyGlass.castShadow = false;
+        group.add(balconyGlass);
 
-        const doorHeight = 2.1;  // Standard door height
+        const doorHeight = 2.1;
         const doorWidth = 1.0;
         const doorY = doorHeight / 2;
         const doorFrameGeo = new THREE.BoxGeometry(0.06, doorHeight + 0.08, doorWidth + 0.08);
@@ -164,7 +176,13 @@ export class BuildingBuilder {
         doorFrame.castShadow = false;
         group.add(doorFrame);
 
-
+        const handleGeo = new THREE.CylinderGeometry(0.03, 0.03, 0.15, 8);
+        const handleMat = materialCache.get('m-red');
+        const handle = new THREE.Mesh(handleGeo, handleMat);
+        handle.rotation.z = Math.PI / 2;
+        handle.position.set(facadeX + (roadDir * 0.35), doorY - 0.3, 0.05);
+        handle.castShadow = false;
+        group.add(handle);
       }
     }
 

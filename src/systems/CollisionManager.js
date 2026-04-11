@@ -185,21 +185,21 @@ export class CollisionManager {
     if (Math.abs(obsPushback) > 0) {
       totalPushbackX += obsPushback;
       collisionOccurred = true;
-      hitType = 'obstacle';
+      if (!hitType) hitType = 'obstacle';
     }
 
     const carPushback = this.checkCars(playerGroup, cars, onCollision);
     if (Math.abs(carPushback) > 0) {
       totalPushbackX += carPushback;
       collisionOccurred = true;
-      hitType = 'car';
+      if (!hitType) hitType = 'car';
     }
 
     const lampPushback = this.checkLampposts(playerGroup, lampposts, onCollision);
     if (Math.abs(lampPushback) > 0) {
       totalPushbackX += lampPushback;
       collisionOccurred = true;
-      hitType = 'lamppost';
+      if (!hitType) hitType = 'lamppost';
     }
 
     const puddleHit = this.checkPuddles(playerGroup, puddles, onCollision);

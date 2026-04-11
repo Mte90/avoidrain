@@ -60,7 +60,7 @@ export class ObstacleBuilder {
   buildBench(position = { x: 0, y: 0, z: 0 }, side = 'right') {
     const group = new THREE.Group();
     
-    // Back faces buildings: left side → π/2 (back to x=-6.5), right side → 3π/2 (back to x=6.5)
+    // Back faces buildings: left side → 3π/2 (back to x=-6.5), right side → π/2 (back to x=6.5)
     group.rotation.y = side === 'left' ? 3 * Math.PI / 2 : Math.PI / 2;
     
     const woodColor = BENCH_BACK_COLORS[Math.floor(Math.random() * BENCH_BACK_COLORS.length)];
@@ -111,8 +111,6 @@ export class ObstacleBuilder {
       group.add(leg);
     }
     
-    // No armrests - keep bench simple without front bars
-    
     group.position.set(position.x, position.y, position.z);
     return group;
   }
@@ -157,14 +155,20 @@ export class ObstacleBuilder {
     sign.castShadow = true;
     group.add(sign);
     
-    // Optional: Add a simple "symbol" on the sign (circle)
-    const symbolRadius = 0.18;
-    const symbolGeo = new THREE.CircleGeometry(symbolRadius, 16);
-    const symbolMat = materialCache.get('m-white', { color: 0xFFFFFF, side: THREE.DoubleSide });
-    const symbol = new THREE.Mesh(symbolGeo, symbolMat);
-    symbol.position.set(0, poleHeight + signHeight / 2, signThickness / 2 + 0.01);
-    symbol.rotation.x = -Math.PI / 2;
-    group.add(symbol);
+    // "by Mte90" text representation (simple dot pattern on sign face)
+    const dotMat = materialCache.get('m-black');
+    const dotGeo = new THREE.CircleGeometry(0.04, 8);
+    const dots = [
+      { x: -0.3, y: 0 }, { x: -0.2, y: 0 }, { x: -0.1, y: 0 },  // "b"
+      { x: 0.0, y: 0 },  // "y"
+      { x: 0.2, y: 0 }, { x: 0.25, y: 0 }, { x: 0.3, y: 0 }, { x: 0.35, y: 0 }  // "Mte90"
+    ];
+    for (const dot of dots) {
+      const d = new THREE.Mesh(dotGeo, dotMat);
+      d.position.set(dot.x, poleHeight + signHeight / 2, signThickness / 2 + 0.01);
+      d.rotation.y = Math.PI / 2;  // Face toward road
+      group.add(d);
+    }
     
     group.position.set(position.x, position.y, position.z);
     return group;

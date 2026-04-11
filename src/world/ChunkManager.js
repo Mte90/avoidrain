@@ -10,8 +10,8 @@ import { DifficultyManager } from '../systems/DifficultyManager.js';
 
 const CHUNK_SIZE = 40;
 const MAX_CARS = 12;
-const BUILDING_ZONE_LEFT = { min: -6, max: -3.5 };
-const BUILDING_ZONE_RIGHT = { min: 3.5, max: 6 };
+const BUILDING_ZONE_LEFT = { min: -13, max: -5.5 };
+const BUILDING_ZONE_RIGHT = { min: 5.5, max: 13 };
 const SIDEWALK_ZONE_LEFT = { min: -4.5, max: -2.5 };
 const SIDEWALK_ZONE_RIGHT = { min: 2.5, max: 4.5 };
 const ROAD_ZONE = { min: -2.5, max: 2.5 };
@@ -145,7 +145,7 @@ export class ChunkManager {
     for (let b = 0; b < numBuildings; b++) {
       const bz = -CHUNK_SIZE / 2 + buildingSpacing / 2 + b * buildingSpacing;
       const leftHeight = 8 + Math.random() * 12;
-      const leftDepth = 18 + Math.random() * 8;
+      const leftDepth = 40 + Math.random() * 10;  // Increased from 18 to 40-50 (tripled)
       const actualLeftDepth = Math.min(leftDepth, buildingSpacing - 1);
       const leftWorldZ = chunkWorldZ + bz;
       const leftMinZ = leftWorldZ - actualLeftDepth / 2;
@@ -183,7 +183,7 @@ export class ChunkManager {
       }
 
       const rightHeight = 8 + Math.random() * 12;
-      const rightDepth = 14 + Math.random() * 4;
+      const rightDepth = 40 + Math.random() * 10;  // Increased from 14 to 40-50 (tripled)
       const actualRightDepth = Math.min(rightDepth, buildingSpacing - 1);
       const rightWorldZ = chunkWorldZ + bz;
       const rightMinZ = rightWorldZ - actualRightDepth / 2;
@@ -325,12 +325,17 @@ export class ChunkManager {
       // Alternate left/right lamps (not pairs)
       let isLeftLamp = (Math.floor((localZ - (-length / 2 + 5)) / spawnInterval) % 2 === 0);
       
-      // Check balcony overlap
-      const leftBalconyZ = buildingsInChunk.filter(b => b.side === 'left').map(b => ({ minZ: b.minZ, maxZ: b.maxZ, balconyZ: b.balconyZ || [] }));
-      const rightBalconyZ = buildingsInChunk.filter(b => b.side === 'right').map(b => ({ minZ: b.minZ, maxZ: b.maxZ, balconyZ: b.balconyZ || [] }));
+      const leftBalconyZ = buildingsInChunk.filter(b => b.side === 'left').map(b => ({ minZ: b.minZ, maxZ: b.maxZ, balconyZ: b.balconyZ || [], balconyHeight: b.balconyHeight || 0 }));
+      const rightBalconyZ = buildingsInChunk.filter(b => b.side === 'right').map(b => ({ minZ: b.minZ, maxZ: b.maxZ, balconyZ: b.balconyZ || [], balconyHeight: b.balconyHeight || 0 }));
       
-      const hasLeftBalconyOverlap = leftBalconyZ.some(b => b.balconyZ && b.balconyZ.some(bz => Math.abs(bz - localZ) < 4));
-      const hasRightBalconyOverlap = rightBalconyZ.some(b => b.balconyZ && b.balconyZ.some(bz => Math.abs(bz - localZ) < 4));
+      const hasLeftBalconyOverlap = leftBalconyZ.some(b => {
+        const isLowBalcony = b.balconyHeight < 4;
+        return isLowBalcony && b.balconyZ && b.balconyZ.some(bz => Math.abs(bz - localZ) < 5);
+      });
+      const hasRightBalconyOverlap = rightBalconyZ.some(b => {
+        const isLowBalcony = b.balconyHeight < 4;
+        return isLowBalcony && b.balconyZ && b.balconyZ.some(bz => Math.abs(bz - localZ) < 5);
+      });
       
       if (!hasLeftBalconyOverlap && isLeftLamp) {
         // Move lamp to middle of sidewalk (x: ±3.5 instead of ±3.0)
@@ -384,7 +389,7 @@ export class ChunkManager {
           }
         }
 
-        const puddle = this.puddleBuilder.build({ x: puddleX, y: 0.16, z: z });
+        const puddle = this.puddleBuilder.build({ x: puddleX, y: 0.18, z: z });
         puddle.traverse((child) => {
           if (child.isMesh) {
             child.castShadow = false;
@@ -410,7 +415,7 @@ export class ChunkManager {
     
     for (let i = 0; i < obstacleCount; i++) {
       const side = Math.random() > 0.5 ? 'left' : 'right';
-      const sidewalkX = side === 'left' ? -3.5 : 3.5;
+      const sidewalkX = side === 'left' ? -4.0 : 4.0;
       const localZ = -length/2 + 10 + (i * spawnInterval) + Math.random() * 8;
       const worldZ = chunkZ + localZ;
       
@@ -550,7 +555,7 @@ export class ChunkManager {
     for (let b = 0; b < numBuildings; b++) {
       const bz = -CHUNK_SIZE / 2 + buildingSpacing / 2 + b * buildingSpacing;
       const leftHeight = 8 + Math.random() * 12;
-      const leftDepth = 14 + Math.random() * 4;
+      const leftDepth = 40 + Math.random() * 10;  // Increased from 14 to 40-50 (tripled)
       const leftBuilding = this.buildingBuilder.build(
         { x: -6.5, y: 0, z: bz },
         2.5,
@@ -568,7 +573,7 @@ export class ChunkManager {
       chunk.add(leftBuilding);
 
       const rightHeight = 8 + Math.random() * 12;
-      const rightDepth = 14 + Math.random() * 4;
+      const rightDepth = 40 + Math.random() * 10;  // Increased from 14 to 40-50 (tripled)
       const rightBuilding = this.buildingBuilder.build(
         { x: 6.5, y: 0, z: bz },
         2.5,

@@ -75,7 +75,7 @@ export class GroundBuilder {
     // Crosswalk stripes (realistic pedestrian crossing - 6 stripes, wider and more spaced)
     const crosswalkWidth = 0.5;
     const crosswalkLength = 3.5;
-    const crosswalkSpacing = 120;  // Much less frequent - every ~120 units
+    const crosswalkSpacing = 120;
     
     const chunkZ = position.z;
     const stripeOffset = (chunkZ % crosswalkSpacing) - length / 2 + crosswalkSpacing / 2;
@@ -84,9 +84,9 @@ export class GroundBuilder {
       const crosswalkZ = stripeOffset + i * (crosswalkSpacing / 6);
       
       if (crosswalkZ >= -length / 2 && crosswalkZ <= length / 2) {
-        const crosswalkGeo = new THREE.BoxGeometry(crosswalkWidth, 0.08, crosswalkLength);
+        const crosswalkGeo = new THREE.BoxGeometry(crosswalkWidth, 0.05, crosswalkLength);
         const crosswalk = new THREE.Mesh(crosswalkGeo, lineMat);
-        crosswalk.position.set(0, 0.16, crosswalkZ);
+        crosswalk.position.set(0, 0.15, crosswalkZ);
         group.add(crosswalk);
       }
     }
