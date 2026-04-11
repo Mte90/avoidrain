@@ -123,7 +123,6 @@ export class ObstacleBuilder {
   buildSign(position = { x: 0, y: 0, z: 0 }) {
     const group = new THREE.Group();
     
-    const signMat = materialCache.get('m-white');
     const poleMat = materialCache.get('m-dark');
     
     const poleHeight = 3.0;
@@ -135,7 +134,6 @@ export class ObstacleBuilder {
     pole.receiveShadow = true;
     group.add(pole);
     
-    // Base plate
     const baseSize = 0.4;
     const baseHeight = 0.1;
     const baseGeo = new THREE.BoxGeometry(baseSize, baseHeight, baseSize);
@@ -145,30 +143,32 @@ export class ObstacleBuilder {
     base.receiveShadow = true;
     group.add(base);
     
-    // Sign board
     const signWidth = 1.2;
     const signHeight = 0.6;
-    const signThickness = 0.02;
-    const signGeo = new THREE.BoxGeometry(signWidth, signHeight, signThickness);
+    
+    const canvas = document.createElement('canvas');
+    canvas.width = 256;
+    canvas.height = 128;
+    const ctx = canvas.getContext('2d');
+    
+    ctx.fillStyle = '#FFD700';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    
+    ctx.fillStyle = '#000000';
+    ctx.font = 'bold 36px Arial';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('by Mte90', canvas.width / 2, canvas.height / 2);
+    
+    const texture = new THREE.CanvasTexture(canvas);
+    texture.needsUpdate = true;
+    
+    const signMat = new THREE.MeshBasicMaterial({ map: texture });
+    const signGeo = new THREE.BoxGeometry(signWidth, signHeight, 0.02);
     const sign = new THREE.Mesh(signGeo, signMat);
     sign.position.set(0, poleHeight + signHeight / 2, 0);
-    sign.castShadow = true;
+    sign.castShadow = false;
     group.add(sign);
-    
-    // "by Mte90" text representation (simple dot pattern on sign face)
-    const dotMat = materialCache.get('m-black');
-    const dotGeo = new THREE.CircleGeometry(0.04, 8);
-    const dots = [
-      { x: -0.3, y: 0 }, { x: -0.2, y: 0 }, { x: -0.1, y: 0 },  // "b"
-      { x: 0.0, y: 0 },  // "y"
-      { x: 0.2, y: 0 }, { x: 0.25, y: 0 }, { x: 0.3, y: 0 }, { x: 0.35, y: 0 }  // "Mte90"
-    ];
-    for (const dot of dots) {
-      const d = new THREE.Mesh(dotGeo, dotMat);
-      d.position.set(dot.x, poleHeight + signHeight / 2, signThickness / 2 + 0.01);
-      d.rotation.y = Math.PI / 2;  // Face toward road
-      group.add(d);
-    }
     
     group.position.set(position.x, position.y, position.z);
     return group;

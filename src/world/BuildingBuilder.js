@@ -77,8 +77,13 @@ export class BuildingBuilder {
         windowFrame.receiveShadow = false;
         group.add(windowFrame);
 
+        // Randomly lit windows (yellow) or dark (black)
+        const isLit = Math.random() > 0.4;
         const glassGeo = new THREE.PlaneGeometry(windowWidth - 0.1, windowHeight - 0.1);
-        const glassMat = materialCache.get('m-emissive-yellow');
+        const glassColor = isLit ? 0xFFFF00 : 0x1a1a1a;
+        const glassMat = isLit 
+          ? materialCache.get('m-emissive-yellow')
+          : materialCache.get('m-black');
         const glass = new THREE.Mesh(glassGeo, glassMat);
         glass.position.set(facadeX + (roadDir * 0.05), y, z);
         glass.rotation.y = -Math.PI / 2 * roadDir;
@@ -170,17 +175,30 @@ export class BuildingBuilder {
         const doorHeight = 2.1;
         const doorWidth = 1.0;
         const doorY = doorHeight / 2;
-        const doorFrameGeo = new THREE.BoxGeometry(0.06, doorHeight + 0.08, doorWidth + 0.08);
+        const doorThickness = 0.05;
+        
+        // Door panel
+        const doorGeo = new THREE.BoxGeometry(doorThickness, doorHeight, doorWidth);
+        const doorMat = materialCache.get('m-dark');
+        const door = new THREE.Mesh(doorGeo, doorMat);
+        door.position.set(facadeX + (roadDir * doorThickness / 2), doorY, 0);
+        door.castShadow = true;
+        group.add(door);
+        
+        // Door frame
+        const doorFrameGeo = new THREE.BoxGeometry(0.04, doorHeight + 0.08, doorWidth + 0.08);
         const doorFrame = new THREE.Mesh(doorFrameGeo, frameMat);
         doorFrame.position.set(facadeX, doorY, 0);
         doorFrame.castShadow = false;
         group.add(doorFrame);
 
-        const handleGeo = new THREE.CylinderGeometry(0.03, 0.03, 0.15, 8);
-        const handleMat = materialCache.get('m-red');
+        // Door handle - attached to door surface facing road
+        const handleGeo = new THREE.CylinderGeometry(0.025, 0.025, 0.12, 8);
+        const handleMat = materialCache.get('m-metal');
         const handle = new THREE.Mesh(handleGeo, handleMat);
-        handle.rotation.z = Math.PI / 2;
-        handle.position.set(facadeX + (roadDir * 0.35), doorY - 0.3, 0.05);
+        handle.rotation.x = Math.PI / 2;
+        // Position on the door surface facing the road
+        handle.position.set(facadeX + (roadDir * doorThickness), doorY - 0.25, 0.35);
         handle.castShadow = false;
         group.add(handle);
       }

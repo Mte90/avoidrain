@@ -339,13 +339,32 @@ export class Game {
         const HIT_MESSAGES = {
           car: '🚗 Hit by a car! -5 pts',
           lamppost: '💡 Hit a lamppost! -5 pts',
-          obstacle: '🚧 Hit an obstacle! -5 pts',
+          obstacle: '🚧 Hit a trash can! -5 pts',
+          bench: '🪑 Hit a bench! -5 pts',
+          sign: '🪧 Hit a sign! -5 pts',
           puddle: '💦 Splashed! -5 pts'
         };
-        this.uiManager.showNotification(HIT_MESSAGES[collisionResult.hitType] || '💥 Ouch! -5 pts', 'hit');
+        const obsData = collisionResult.obstacleData;
+        if (obsData && obsData.type) {
+          const typeKey = obsData.type;
+          this.uiManager.showNotification(HIT_MESSAGES[typeKey] || '🚧 Hit an obstacle! -5 pts', 'hit');
+        } else {
+          this.uiManager.showNotification(HIT_MESSAGES[collisionResult.hitType] || '💥 Ouch! -5 pts', 'hit');
+        }
       }
       
       this.collisionManager.updateBlink(this.player.getGroup(), delta);
+      
+      // After collision, ensure player returns to sidewalk center
+      if (collisionResult.obstacleData && collisionResult.obstacleData.side) {
+        const hitSide = collisionResult.obstacleData.side;
+        const targetX = hitSide === 'left' ? -3.5 : 3.5;
+        // Smoothly move player back to sidewalk center after pushback
+        const playerGroup = this.player.getGroup();
+        if (Math.abs(playerGroup.position.x - targetX) > 0.1) {
+          playerGroup.position.x += (targetX - playerGroup.position.x) * 0.05;
+        }
+      }
     }
 
     if (state === GameState.PLAYING) {
@@ -356,6 +375,12 @@ export class Game {
       }
       if (playerGroup.position.x > BOUNDARIES.RIGHT) {
         playerGroup.position.x -= PLAYER.COLLISION_RECOVERY_SPEED * delta;
+      }
+      
+      // Additional check: if player is too far from sidewalk center, guide back
+      if (Math.abs(playerGroup.position.x) > 1.0 && Math.abs(playerGroup.position.x) < 2.5) {
+        const targetX = playerGroup.position.x > 0 ? 3.5 : -3.5;
+        playerGroup.position.x += (targetX - playerGroup.position.x) * 0.02;
       }
     }
 

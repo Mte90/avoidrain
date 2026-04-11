@@ -35,18 +35,20 @@ export class CollisionManager {
       const obstacleBox = new THREE.Box3().setFromObject(obs.mesh);
       
       if (playerBox.intersectsBox(obstacleBox)) {
-        // Calculate push direction (away from obstacle center)
         const pushDir = new THREE.Vector3()
           .subVectors(playerGroup.position, obs.mesh.position)
           .normalize();
         
-        // Only push horizontally
         pushDir.y = 0;
         
         const pushX = pushDir.x > 0 ? this.pushbackStrength : -this.pushbackStrength;
         totalPushbackX += pushX;
         
-        if (onCollision) onCollision('obstacle', obs);
+        if (onCollision) {
+          const obstacleType = obs.mesh.userData.obstacleType || 'obstacle';
+          const obstacleSide = obs.side || 'unknown';
+          onCollision('obstacle', { type: obstacleType, side: obstacleSide, mesh: obs.mesh });
+        }
       }
     }
 
@@ -180,12 +182,16 @@ export class CollisionManager {
     let totalPushbackX = 0;
     let collisionOccurred = false;
     let hitType = null;
+    let obstacleData = null;
 
-    const obsPushback = this.checkObstacles(playerGroup, obstacles, onCollision);
+    const obsPushback = this.checkObstacles(playerGroup, obstacles, (type, data) => {
+      hitType = 'obstacle';
+      obstacleData = data;
+      if (onCollision) onCollision(type, data);
+    });
     if (Math.abs(obsPushback) > 0) {
       totalPushbackX += obsPushback;
       collisionOccurred = true;
-      if (!hitType) hitType = 'obstacle';
     }
 
     const carPushback = this.checkCars(playerGroup, cars, onCollision);
@@ -214,7 +220,8 @@ export class CollisionManager {
     return { 
       pushbackX: totalPushbackX, 
       collisionOccurred,
-      hitType
+      hitType,
+      obstacleData
     };
   }
 

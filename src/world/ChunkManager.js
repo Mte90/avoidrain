@@ -444,6 +444,7 @@ export class ChunkManager {
       obstacle.position.set(sidewalkX, 0.5, localZ);
       
       obstacle.userData.side = side;
+      obstacle.userData.obstacleType = type;
       
       obstacle.traverse((child) => {
         if (child.isMesh) {
@@ -452,7 +453,7 @@ export class ChunkManager {
         }
       });
       chunk.add(obstacle);
-      this.obstacles.push({ mesh: obstacle, chunkZ, side });
+      this.obstacles.push({ mesh: obstacle, chunkZ, side, type });
     }
   }
 
