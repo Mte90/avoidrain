@@ -321,11 +321,11 @@ export class ChunkManager {
     
     for (let localZ = -length / 2 + 8; localZ < length / 2; localZ += spawnInterval) {
       const isLeftLamp = (Math.floor((localZ - (-length / 2 + 8)) / spawnInterval) % 2 === 0);
-      const balconyAtLeft = chunkBalconies.find(b => b.side === 'left' && Math.abs(b.z - localZ) < 3);
-      const balconyAtRight = chunkBalconies.find(b => b.side === 'right' && Math.abs(b.z - localZ) < 3);
+      const balconiesAtLeft = chunkBalconies.filter(b => b.side === 'left' && Math.abs(b.z - localZ) < 3);
+      const balconiesAtRight = chunkBalconies.filter(b => b.side === 'right' && Math.abs(b.z - localZ) < 3);
       
-      if (balconyAtLeft && balconyAtLeft.y < STREET_LAMP_HEIGHT) continue;
-      if (balconyAtRight && balconyAtRight.y < STREET_LAMP_HEIGHT) continue;
+      if (balconiesAtLeft.some(b => b.y < STREET_LAMP_HEIGHT)) continue;
+      if (balconiesAtRight.some(b => b.y < STREET_LAMP_HEIGHT)) continue;
       
       if (isLeftLamp) {
         const leftLamp = streetLampBuilder.build({ x: -3.5, y: 0.15, z: 0 });
@@ -401,7 +401,7 @@ export class ChunkManager {
     const obstacleTypes = ['trashCan', 'bench', 'sign'];
     const usedPositions = [];
     const chunkBalconies = this.balconies.filter(b => b.chunkZ === chunkZ);
-    const SIGN_POST_HEIGHT = 3.0;
+    const SIGN_POST_POLE_TOP_Y = 2.0;  // Pole height 3.0, so top is at Y=1.5
     
     for (let i = 0; i < obstacleCount; i++) {
       const side = Math.random() > 0.5 ? 'left' : 'right';
@@ -409,9 +409,9 @@ export class ChunkManager {
       const localZ = -length/2 + 10 + (i * spawnInterval) + Math.random() * 8;
       const worldZ = chunkZ + localZ;
       
-      // Check for sign posts - don't place under low balconies
-      const balconyAtPos = chunkBalconies.find(b => b.side === side && Math.abs(b.z - localZ) < 3);
-      if (balconyAtPos && balconyAtPos.y < SIGN_POST_HEIGHT) continue;
+      // Check for sign posts - don't place under ANY low balcony
+      const balconiesAtPos = chunkBalconies.filter(b => b.side === side && Math.abs(b.z - localZ) < 3);
+      if (balconiesAtPos.some(b => b.y < SIGN_POST_POLE_TOP_Y)) continue;
       
       let tooClose = false;
       for (const pos of usedPositions) {

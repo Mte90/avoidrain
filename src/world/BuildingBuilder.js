@@ -164,7 +164,7 @@ export class BuildingBuilder {
         rightSideRail.castShadow = false;
         group.add(rightSideRail);
 
-        const balconyWindowY = currentBalconyY;
+        const balconyWindowY = currentBalconyY + 0.06;  // Start above floor (rail thickness)
         const balconyWindowZ = 0;
         const balconyWindowWidth = 1.5;
         const balconyWindowHeight = 1.8;
@@ -176,7 +176,10 @@ export class BuildingBuilder {
         group.add(balconyWindowFrame);
 
         const balconyGlassGeo = new THREE.PlaneGeometry(balconyWindowWidth - 0.1, balconyWindowHeight - 0.1);
-        const balconyGlassMat = new THREE.MeshBasicMaterial({ color: 0xFFFF00 });
+        const balconyGlassMat = new THREE.MeshBasicMaterial({ 
+          color: 0xFFFF00,
+          side: THREE.DoubleSide
+        });
         const balconyGlass = new THREE.Mesh(balconyGlassGeo, balconyGlassMat);
         balconyGlass.position.set(facadeX + (roadDir * 0.06), balconyWindowY + balconyWindowHeight / 2, balconyWindowZ);
         balconyGlass.rotation.y = -Math.PI / 2 * roadDir;
@@ -192,7 +195,7 @@ export class BuildingBuilder {
           side: THREE.DoubleSide
         });
         const shadowPerson = new THREE.Mesh(shadowPersonGeo, shadowPersonMat);
-        shadowPerson.position.set(facadeX + (roadDir * -0.05), balconyWindowY + 0.8, balconyWindowZ);
+        shadowPerson.position.set(facadeX + (roadDir * -0.05), balconyWindowY + 0.9, balconyWindowZ);
         shadowPerson.userData.isShadowPerson = true;
         shadowPerson.userData.offset = Math.random() * Math.PI * 2;
         group.add(shadowPerson);
