@@ -1,7 +1,4 @@
-/**
- * EventBus - Centralized event system for decoupled module communication
- * Allows modules to publish/subscribe without direct dependencies
- */
+import { logger } from './Logger.js';
 
 export class EventBus {
   constructor() {
@@ -44,7 +41,7 @@ export class EventBus {
       try {
         callback(data);
       } catch (error) {
-        console.error(`EventBus: Error in ${event} listener:`, error);
+        logger.error(`EventBus: Error in ${event} listener:`, error);
       }
     }
   }

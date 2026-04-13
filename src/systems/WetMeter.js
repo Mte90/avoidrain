@@ -87,6 +87,37 @@ export class WetMeter {
   }
 
   checkCarCollision(playerX, playerZ, cars) {
+    if (!cars || cars.length === 0) return false;
+    
+    const now = performance.now() * 0.001;
+    if (now - this.lastCarHitTime < this.carHitCooldown) {
+      return false;
+    }
+    
+    const playerRadius = PLAYER_RADIUS;
+    
+    for (const car of cars) {
+      if (!car.visible) continue;
+      
+      const carX = car.position.x;
+      const carZ = car.position.z;
+      const direction = car.userData.direction || 1;
+      
+      const carLaneX = direction > 0 ? -1.5 : 1.5;
+      
+      const distX = Math.abs(playerX - carLaneX);
+      const distZ = Math.abs(playerZ - carZ);
+      
+      const collisionDistX = (CAR_WIDTH / 2) + playerRadius;
+      const collisionDistZ = (CAR_DEPTH / 2) + playerRadius;
+      
+      if (distX < collisionDistX && distZ < collisionDistZ) {
+        this.lastCarHitTime = now;
+        this.wetMeter = Math.min(this.wetMeter + CAR_HIT_PENALTY, 100);
+        return true;
+      }
+    }
+    
     return false;
   }
 

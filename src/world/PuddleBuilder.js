@@ -21,11 +21,17 @@ export class PuddleBuilder {
     }
     geometry.computeVertexNormals();
     
-    const material = materialCache.get('puddle');
+    const material = new THREE.MeshStandardMaterial({
+      color: 0x4a6a7a,
+      roughness: 0.05,
+      metalness: 0.6,
+      transparent: true,
+      opacity: 0.85
+    });
     
     const puddle = new THREE.Mesh(geometry, material);
     puddle.rotation.x = -Math.PI / 2;
-    puddle.position.set(x, y, z);
+    puddle.position.set(x, 0.15, z);
     puddle.castShadow = false;
     puddle.receiveShadow = false;
     puddle.userData = { type: 'puddle' };

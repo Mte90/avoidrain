@@ -84,7 +84,7 @@ export class CharacterBuilder {
     // Arm groups for animation
     const leftArmGroup = new THREE.Group();
     leftArmGroup.name = 'leftArm';
-    leftArmGroup.position.set(-0.22, 1.4, 0);
+    leftArmGroup.position.set(-0.35, 1.4, 0);
     
     const leftUpperArm = new THREE.Mesh(armGeo, shirtMat);
     leftUpperArm.position.set(0, -armLength / 2, 0);
@@ -111,7 +111,7 @@ export class CharacterBuilder {
     
     const rightArmGroup = new THREE.Group();
     rightArmGroup.name = 'rightArm';
-    rightArmGroup.position.set(0.22, 1.4, 0);
+    rightArmGroup.position.set(0.35, 1.4, 0);
     
     const rightUpperArm = new THREE.Mesh(armGeo, shirtMat);
     rightUpperArm.position.set(0, -armLength / 2, 0);

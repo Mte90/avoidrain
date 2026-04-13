@@ -8,10 +8,12 @@ export class AudioManager {
     this.masterGain = null;
     this.rainNode = null;
     this.rainGain = null;
+    this.rainNoiseBuffer = null;
     this.isMuted = localStorage.getItem('avoidrain-mute') === 'true';
-    this.volume = 0.5;
+    this.volume = parseFloat(localStorage.getItem('avoidrain-volume')) || 0.5;
     this.isInitialized = false;
     this.footstepInterval = null;
+    this.gameState = null;
   }
 
   /**
@@ -23,27 +25,67 @@ export class AudioManager {
     this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
     this.masterGain = this.audioContext.createGain();
     this.masterGain.connect(this.audioContext.destination);
-    this.masterGain.gain.value = this.volume;
+    this.masterGain.gain.value = this.isMuted ? 0 : this.volume;
+
+    // Pre-create rain buffer once
+    this.rainNoiseBuffer = this.createNoiseBuffer(2);
 
     this.isInitialized = true;
 
     // Set up user interaction handler to resume AudioContext
     this.setupUserInteractionHandler();
+    
+    // Set up visibility change handler to resume AudioContext when tab becomes visible
+    this.setupVisibilityHandler();
   }
 
   /**
    * Resume AudioContext on first user interaction (required by browsers)
    */
   setupUserInteractionHandler() {
-    const resumeContext = async () => {
+    this._resumeContext = async () => {
       if (this.audioContext && this.audioContext.state === 'suspended') {
         await this.audioContext.resume();
       }
     };
 
-    document.addEventListener('click', resumeContext, { once: true });
-    document.addEventListener('keydown', resumeContext, { once: true });
-    document.addEventListener('touchstart', resumeContext, { once: true });
+    document.addEventListener('click', this._resumeContext, { once: true });
+    document.addEventListener('keydown', this._resumeContext, { once: true });
+    document.addEventListener('touchstart', this._resumeContext, { once: true });
+  }
+
+  /**
+   * Resume AudioContext when tab becomes visible again
+   */
+  setupVisibilityHandler() {
+    this._onVisibilityChange = async () => {
+      if (!document.hidden && this.audioContext && this.audioContext.state === 'suspended') {
+        await this.audioContext.resume();
+      }
+    };
+
+    document.addEventListener('visibilitychange', this._onVisibilityChange);
+  }
+
+  /**
+   * Set the game state reference for state-aware audio
+   */
+  setGameState(gameState) {
+    this.gameState = gameState;
+  }
+
+  /**
+   * Check if we should play audio (only in PLAYING state for certain sounds)
+   */
+  _canPlay(gameStateAware = false) {
+    if (!this.isInitialized || this.isMuted) return false;
+    if (gameStateAware && this.gameState) {
+      // Import GameState dynamically to avoid circular deps
+      const { GameState } = require('./systems/GameState.js');
+      const state = this.gameState.getState();
+      return state === GameState.PLAYING || state === GameState.MENU;
+    }
+    return true;
   }
 
   /**
@@ -69,10 +111,9 @@ export class AudioManager {
     if (!this.isInitialized || this.isMuted) return;
     if (this.rainNode) return; // Already playing
 
-    // Create noise source
-    const noiseBuffer = this.createNoiseBuffer(2);
+    // Use pre-created buffer instead of creating new one each time
     this.rainNode = this.audioContext.createBufferSource();
-    this.rainNode.buffer = noiseBuffer;
+    this.rainNode.buffer = this.rainNoiseBuffer;
     this.rainNode.loop = true;
 
     // Low-pass filter for rain-like sound
@@ -356,6 +397,7 @@ export class AudioManager {
    */
   setVolume(value) {
     this.volume = Math.max(0, Math.min(1, value));
+    localStorage.setItem('avoidrain-volume', this.volume.toString());
     if (this.masterGain) {
       this.masterGain.gain.value = this.isMuted ? 0 : this.volume;
     }
@@ -373,7 +415,7 @@ export class AudioManager {
    */
   toggleMute() {
     this.isMuted = !this.isMuted;
-    localStorage.setItem('avoidrain-mute', this.isMuted);
+    localStorage.setItem('avoidrain-mute', this.isMuted.toString());
     if (this.masterGain) {
       this.masterGain.gain.value = this.isMuted ? 0 : this.volume;
     }
@@ -385,6 +427,7 @@ export class AudioManager {
    */
   setMuted(muted) {
     this.isMuted = muted;
+    localStorage.setItem('avoidrain-mute', this.isMuted.toString());
     if (this.masterGain) {
       this.masterGain.gain.value = this.isMuted ? 0 : this.volume;
     }
@@ -401,12 +444,32 @@ export class AudioManager {
    * Clean up audio resources
    */
   dispose() {
+    // Remove event listeners
+    if (this._resumeContext) {
+      document.removeEventListener('click', this._resumeContext);
+      document.removeEventListener('keydown', this._resumeContext);
+      document.removeEventListener('touchstart', this._resumeContext);
+      this._resumeContext = null;
+    }
+    
+    if (this._onVisibilityChange) {
+      document.removeEventListener('visibilitychange', this._onVisibilityChange);
+      this._onVisibilityChange = null;
+    }
+
+    // Stop all sounds
     this.stopRain();
     this.stopFootsteps();
+
+    // Close audio context
     if (this.audioContext) {
       this.audioContext.close();
       this.audioContext = null;
     }
+
+    // Clear references
+    this.masterGain = null;
+    this.rainNoiseBuffer = null;
     this.isInitialized = false;
   }
 }

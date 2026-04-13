@@ -1,7 +1,4 @@
-/**
- * UIManager - Manages HTML UI overlay for the game
- * Handles wet meter, timer, score, and game state menus
- */
+import { logger } from '../core/Logger.js';
 
 export class UIManager {
   constructor() {
@@ -36,7 +33,7 @@ export class UIManager {
 
     for (const key of requiredElements) {
       if (!this.elements[key]) {
-        console.error(`UIManager: Missing required element #${key}`);
+        logger.error(`UIManager: Missing required element #${key}`);
       }
     }
 
@@ -141,7 +138,7 @@ export class UIManager {
         break;
 
       default:
-        console.warn(`UIManager: Unknown game state "${gameState}"`);
+        logger.warn(`UIManager: Unknown game state "${gameState}"`);
     }
   }
 

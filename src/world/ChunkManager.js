@@ -7,6 +7,7 @@ import { PuddleBuilder } from './PuddleBuilder.js';
 import { StreetLampBuilder } from './StreetLampBuilder.js';
 import { ObstacleBuilder } from './ObstacleBuilder.js';
 import { DifficultyManager } from '../systems/DifficultyManager.js';
+import { RENDERER } from '../core/Constants.js';
 
 const CHUNK_SIZE = 40;
 const MAX_CARS = 12;
@@ -128,7 +129,7 @@ export class ChunkManager {
       length
     );
     groundGroup.traverse((child) => {
-      if (child.isMesh) {
+      if (child.isMesh && RENDERER.SHADOWS_ENABLED) {
         child.castShadow = true;
         child.receiveShadow = true;
       }
@@ -304,6 +305,7 @@ export class ChunkManager {
           car.rotation.y = -Math.PI / 2;
         }
         chunk.add(car);
+        this.cars.push(car);
       }
     }
   }
@@ -369,7 +371,7 @@ export class ChunkManager {
         const onLeftLane = Math.random() > 0.5;
         let puddleX;
 
-        const onRoad = Math.random() > 0.4;
+        const onRoad = Math.random() < 0.6;
         if (onRoad) {
           if (onLeftLane) {
             puddleX = -0.5 - Math.random() * 0.8;
@@ -378,13 +380,13 @@ export class ChunkManager {
           }
         } else {
           if (onLeftLane) {
-            puddleX = -3.0 - Math.random() * 1.0;
+            puddleX = -2.5 - Math.random() * 1.5;
           } else {
-            puddleX = 3.0 + Math.random() * 1.0;
+            puddleX = 2.5 + Math.random() * 1.5;
           }
         }
 
-        const puddle = this.puddleBuilder.build({ x: puddleX, y: 0.02, z: z });
+        const puddle = this.puddleBuilder.build({ x: puddleX, y: 0, z: z });
         puddle.traverse((child) => {
           if (child.isMesh) {
             child.castShadow = false;
@@ -402,8 +404,8 @@ export class ChunkManager {
       this.obstacleBuilder = new ObstacleBuilder();
     }
     const length = CHUNK_SIZE;
-    const obstacleCount = 3;
-    const spawnInterval = 20;
+    const obstacleCount = 6;
+    const spawnInterval = 12;
     
     const obstacleTypes = ['trashCan', 'bench', 'sign'];
     const usedPositions = [];

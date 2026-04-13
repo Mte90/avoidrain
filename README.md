@@ -3,6 +3,8 @@
 
 **WIP**: A 3D browser game where you run under balconies to avoid the rain!
 
+Plan: create a game with pure 100% code by AI and no human intervention in the code, including the assets and debug.
+
 <img width="1832" height="993" alt="Image" src="https://github.com/user-attachments/assets/1c621f12-8132-4a7e-b9a8-d55a8ab269fb" />
 
 ## 🎮 How to Play

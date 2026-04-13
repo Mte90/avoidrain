@@ -16,7 +16,7 @@ import { ObstacleManager } from './items/ObstacleManager.js';
 import { PortalManager } from './utils/PortalManager.js';
 import { MenuDemoManager } from './systems/MenuDemoManager.js';
 import { CollisionManager } from './systems/CollisionManager.js';
-import { PLAYER, BOUNDARIES, SCORING, CAMERA, RENDERER, FOG, SCENE_BG, LIGHTNING, LIGHT, JUICE, RAIN, COLLISION } from './core/Constants.js';
+import { PLAYER, BOUNDARIES, SCORING, CAMERA, RENDERER, FOG, SCENE_BG, LIGHTNING, LIGHT, JUICE, RAIN, COLLISION, SIDEWALK } from './core/Constants.js';
 import { gameEvents } from './core/EventBus.js';
 
 export class Game {
@@ -49,10 +49,16 @@ export class Game {
 
     const directionalLight = new THREE.DirectionalLight(LIGHT.DIRECTIONAL_COLOR, LIGHT.DIRECTIONAL_INTENSITY);
     directionalLight.position.set(10, 15, 10);
+    directionalLight.castShadow = RENDERER.SHADOWS_ENABLED;
+    directionalLight.shadow.mapSize.width = 1024;
+    directionalLight.shadow.mapSize.height = 1024;
+    directionalLight.shadow.camera.near = 0.5;
+    directionalLight.shadow.camera.far = 50;
     this.scene.add(directionalLight);
 
     const fillLight = new THREE.DirectionalLight(LIGHT.FILL_COLOR, LIGHT.FILL_INTENSITY);
     fillLight.position.set(-10, 10, -10);
+    fillLight.castShadow = RENDERER.SHADOWS_ENABLED;
     this.scene.add(fillLight);
 
     // Rimosso HemisphereLight per ridurre complessità shader su mobile
@@ -102,6 +108,9 @@ export class Game {
     this.fpsFrames = [];
     this.fpsUpdateTime = 0;
 
+    // Prevent multiple handleGameOver calls
+    this.hasHandledGameOver = false;
+
     this.setupEventListeners();
     this.uiManager.init();
     this.uiManager.updateGameState('MENU');
@@ -112,33 +121,51 @@ export class Game {
   }
 
   setupEventListeners() {
-    window.addEventListener('resize', () => {
+    this._onResize = () => {
       this.camera.aspect = window.innerWidth / window.innerHeight;
       this.camera.updateProjectionMatrix();
       this.renderer.setSize(window.innerWidth, window.innerHeight);
-    });
-
-    document.addEventListener('keydown', (e) => {
+    };
+    this._onKeyDown = (e) => {
       if (e.key === 'Enter') {
         this.handleEnterKey();
       } else if (e.key === 'f' || e.key === 'F') {
         this.toggleFPS();
       }
-    });
-
-    document.addEventListener('click', () => {
+    };
+    this._onClick = () => {
       this.handleClick();
-    });
+    };
+    this._onMuteClick = (e) => {
+      e.stopPropagation();
+      const isMuted = this.audioManager.toggleMute();
+      muteBtn.textContent = isMuted ? '🔇' : '🔊';
+    };
 
-    // Mute button handler
+    window.addEventListener('resize', this._onResize);
+    document.addEventListener('keydown', this._onKeyDown);
+    document.addEventListener('click', this._onClick);
+
     const muteBtn = document.getElementById('mute-btn');
     if (muteBtn) {
-      muteBtn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        const isMuted = this.audioManager.toggleMute();
-        muteBtn.textContent = isMuted ? '🔇' : '🔊';
-      });
+      muteBtn.addEventListener('click', this._onMuteClick);
       muteBtn.textContent = this.audioManager.getMuted() ? '🔇' : '🔊';
+    }
+  }
+
+  dispose() {
+    window.removeEventListener('resize', this._onResize);
+    document.removeEventListener('keydown', this._onKeyDown);
+    document.removeEventListener('click', this._onClick);
+    
+    const muteBtn = document.getElementById('mute-btn');
+    if (muteBtn) {
+      muteBtn.removeEventListener('click', this._onMuteClick);
+    }
+    
+    if (this.fpsElement) {
+      this.fpsElement.remove();
+      this.fpsElement = null;
     }
   }
 
@@ -165,7 +192,7 @@ export class Game {
   startGame() {
     this.gameState.startPlaying();
     this.resetGame();
-    this.menuDemoManager.stop();
+    this.menuDemoManager.start();
     this.audioManager.playRain();
     this.audioManager.startFootsteps();
   }
@@ -173,8 +200,7 @@ export class Game {
   restartGame() {
     this.gameState.reset();
     this.resetGame();
-    this.gameState.startPlaying();
-    this.menuDemoManager.stop();
+    this.menuDemoManager.start();
     this.audioManager.playRain();
     this.audioManager.startFootsteps();
   }
@@ -209,6 +235,7 @@ export class Game {
 
   handleGameOver() {
     this.audioManager.stopFootsteps();
+    this.audioManager.stopRain();
     this.audioManager.playGameOver();
     this.uiManager.setGameOverScore(this.scoreManager.getScore());
     
@@ -257,13 +284,8 @@ export class Game {
 
     const playerPos = this.player.getPosition();
     
-    // Make directional light follow player for shadows
-    const directionalLight = this.scene.children.find(child => child.isDirectionalLight);
-    if (directionalLight) {
-      directionalLight.position.set(playerPos.x, 15, playerPos.z + 10);
-      directionalLight.target.position.copy(this.player.getGroup().position);
-      directionalLight.target.updateMatrixWorld();
-    }
+    // Light is fixed in world space for realistic shadows
+    // (removed: directional light following player)
     
     this.rainSystem.setPlayerPosition(playerPos.x, playerPos.y, playerPos.z);
 
@@ -273,6 +295,7 @@ export class Game {
       this.difficultyManager.update(delta);
       this.player.update(delta, this.chunkManager);
       this.chunkManager.update(playerPos.z);
+      this.chunkManager.updateCars(delta);
       this.rainSystem.update(delta);
 
       this.backdropBuilder.updateBuildingPositions(this.backdrop, playerPos.z);
@@ -284,7 +307,6 @@ export class Game {
       
       if (wasHit) {
         this.audioManager.playSplash();
-        this.audioManager.playHorn();
         this.juiceSystem.addScreenShake(JUICE.SCREEN_SHAKE_INTENSITY);
         this.uiManager.showNotification('💥 Hit!', 'hit');
       }
@@ -359,7 +381,7 @@ export class Game {
       const playerGroup = this.player.getGroup();
       if (collisionResult.collisionOccurred) {
         const playerX = playerGroup.position.x;
-        const targetX = playerX < 0 ? -3.5 : 3.5;
+        const targetX = playerX < 0 ? SIDEWALK.LEFT_X : SIDEWALK.RIGHT_X;
         playerGroup.position.x = targetX;
       }
     }
@@ -375,14 +397,15 @@ export class Game {
       }
       
       // If player is far from sidewalk center, force back to center
-      if (playerGroup.position.x > 1.0 && playerGroup.position.x < 2.5) {
-        playerGroup.position.x = 3.5;
-      } else if (playerGroup.position.x < -1.0 && playerGroup.position.x > -2.5) {
-        playerGroup.position.x = -3.5;
+      if (playerGroup.position.x > SIDEWALK.FORCE_CENTER_THRESHOLD_LOW && playerGroup.position.x < SIDEWALK.FORCE_CENTER_THRESHOLD_HIGH) {
+        playerGroup.position.x = SIDEWALK.RIGHT_X;
+      } else if (playerGroup.position.x < -SIDEWALK.FORCE_CENTER_THRESHOLD_LOW && playerGroup.position.x > -SIDEWALK.FORCE_CENTER_THRESHOLD_HIGH) {
+        playerGroup.position.x = SIDEWALK.LEFT_X;
       }
     }
 
-    if (this.gameState.getState() === GameState.GAME_OVER) {
+    if (this.gameState.getState() === GameState.GAME_OVER && !this.hasHandledGameOver) {
+      this.hasHandledGameOver = true;
       this.handleGameOver();
     }
 

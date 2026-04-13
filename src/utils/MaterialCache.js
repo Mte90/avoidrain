@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { logger } from '../core/Logger.js';
 
 export class MaterialCache {
   constructor() {
@@ -99,7 +100,7 @@ export class MaterialCache {
   get(key, overrides = {}) {
     const baseMat = this.cache.get(key);
     if (!baseMat) {
-      console.warn(`MaterialCache: Unknown key '${key}'`);
+      logger.warn(`MaterialCache: Unknown key '${key}'`);
       return baseMat;
     }
     

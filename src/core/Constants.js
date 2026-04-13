@@ -27,7 +27,7 @@ export const CAMERA = {
 export const RENDERER = {
   MAX_PIXEL_RATIO: 2,
   ANTIALIAS: true,
-  SHADOWS_ENABLED: false,
+  SHADOWS_ENABLED: true,
 };
 
 export const FOG = {
@@ -72,4 +72,15 @@ export const COLLISION = {
   PUSHBACK_FORCE: 10,
   BLINK_DURATION: 0.3,
   POSITION_THRESHOLD: 0.5,
+};
+
+export const SIDEWALK = {
+  LEFT_X: -3.5,
+  RIGHT_X: 3.5,
+  FORCE_CENTER_THRESHOLD_LOW: 1.0,
+  FORCE_CENTER_THRESHOLD_HIGH: 2.5,
+};
+
+export const DEBUG = {
+  CONSOLE_ENABLED: false,
 };
