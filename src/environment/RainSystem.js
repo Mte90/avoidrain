@@ -93,9 +93,8 @@ export class RainSystem {
       
       positions[i6 + 1] -= this.velocities[i] * delta * speedMultiplier;
       positions[i6 + 4] -= this.velocities[i] * delta * speedMultiplier;
-
-      if (positions[i6 + 1] < -2) {
-        const newY = VOLUME_HEIGHT;
+      
+      if (positions[i6 + 1] < 0.5) {        const newY = VOLUME_HEIGHT;
         const newX = (Math.random() - 0.5) * VOLUME_WIDTH;
         const newZ = (Math.random() - 0.5) * VOLUME_DEPTH;
         const dropLength = 0.3 + Math.random() * 0.4;

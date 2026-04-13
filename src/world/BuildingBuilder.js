@@ -58,12 +58,26 @@ export class BuildingBuilder {
     for (let row = 0; row < numWindowsY; row++) {
       for (let col = 0; col < numWindowsZ; col++) {
         const z = -depth / 2 + windowSpacingZ * (col + 1);
-        const y = bottomY + windowSpacingY * (row + 1);
-
-        // Skip windows that would be under a balcony (too close)
+        
+        // Calculate window Y position
+        let y = bottomY + windowSpacingY * (row + 1);
+        let currentWindowHeight = windowHeight;
+        
+        // Check if this window is directly under a balcony - make it taller (1.8m person height)
+        for (const balconyY of balconyYPositions) {
+          if (Math.abs(y - balconyY) < 1.0) {
+            // Window under balcony: position it as low as possible without touching floor
+            // Leave 0.2m gap from balcony floor, use full 1.8m height
+            y = balconyY - 0.2 - 1.8 / 2;
+            currentWindowHeight = 1.8;
+            break;
+          }
+        }
+        
+        // Also skip windows that would overlap with balcony floor
         let tooCloseToBalcony = false;
         for (const balconyY of balconyYPositions) {
-          if (Math.abs(y - balconyY) < 1.2) {  // Skip only windows directly under balcony
+          if (y + currentWindowHeight / 2 > balconyY - 0.1) {
             tooCloseToBalcony = true;
             break;
           }

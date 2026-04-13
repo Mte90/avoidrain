@@ -279,7 +279,12 @@ export class Game {
 
     if (state === GameState.MENU) {
       this.menuDemoManager.update(delta);
+      this.player.update(delta);
       this.rainSystem.update(delta);
+      this.chunkManager.updateCars(delta);
+      // Update chunks in demo mode too (player moves in demo)
+      const playerPos = this.player.getPosition();
+      this.chunkManager.update(playerPos.z);
     }
 
     const playerPos = this.player.getPosition();

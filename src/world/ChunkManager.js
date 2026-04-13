@@ -178,7 +178,8 @@ export class ChunkManager {
         this.buildingPositions.push({ side: 'left', minZ: leftMinZ, maxZ: leftMaxZ, chunkZ });
         buildingsInThisChunk.push({ side: 'left', minZ: leftMinZ, maxZ: leftMaxZ });
         if (balconyConfig.leftHasBalcony) {
-          this.balconies.push({ side: 'left', x: -6.5, z: bz + (Math.random() - 0.5), chunkZ });
+          const balconyFloorY = 0.15 + leftHeight * 0.35;
+          this.balconies.push({ side: 'left', x: -6.5, z: bz + (Math.random() - 0.5), chunkZ, y: balconyFloorY });
         }
       }
 
@@ -215,7 +216,8 @@ export class ChunkManager {
         this.buildingPositions.push({ side: 'right', minZ: rightMinZ, maxZ: rightMaxZ, chunkZ });
         buildingsInThisChunk.push({ side: 'right', minZ: rightMinZ, maxZ: rightMaxZ });
         if (balconyConfig.rightHasBalcony) {
-          this.balconies.push({ side: 'right', x: 6.5, z: bz + (Math.random() - 0.5), chunkZ });
+          const balconyFloorY = 0.15 + rightHeight * 0.35;
+          this.balconies.push({ side: 'right', x: 6.5, z: bz + (Math.random() - 0.5), chunkZ, y: balconyFloorY });
         }
       }
     }
@@ -314,27 +316,16 @@ export class ChunkManager {
     const streetLampBuilder = new StreetLampBuilder();
     const length = CHUNK_SIZE;
     const spawnInterval = 30 + Math.random() * 15;
-    const buildingsInChunk = chunk.userData.buildings || [];
     const chunkBalconies = this.balconies.filter(b => b.chunkZ === chunkZ);
-    
+    const STREET_LAMP_HEIGHT = 3.5;
     
     for (let localZ = -length / 2 + 8; localZ < length / 2; localZ += spawnInterval) {
-      const worldZ = chunkZ + localZ;
+      const isLeftLamp = (Math.floor((localZ - (-length / 2 + 8)) / spawnInterval) % 2 === 0);
+      const balconyAtLeft = chunkBalconies.find(b => b.side === 'left' && Math.abs(b.z - localZ) < 3);
+      const balconyAtRight = chunkBalconies.find(b => b.side === 'right' && Math.abs(b.z - localZ) < 3);
       
-      let isLeftLamp = (Math.floor((localZ - (-length / 2 + 8)) / spawnInterval) % 2 === 0);
-      
-      const hasBalconyAtLeft = chunkBalconies.some(b => 
-        b.side === 'left' && Math.abs(b.z - localZ) < 3
-      );
-      const hasBalconyAtRight = chunkBalconies.some(b => 
-        b.side === 'right' && Math.abs(b.z - localZ) < 3
-      );
-      
-      if (isLeftLamp && hasBalconyAtLeft) {
-        continue;
-      } else if (!isLeftLamp && hasBalconyAtRight) {
-        continue;
-      }
+      if (balconyAtLeft && balconyAtLeft.y < STREET_LAMP_HEIGHT) continue;
+      if (balconyAtRight && balconyAtRight.y < STREET_LAMP_HEIGHT) continue;
       
       if (isLeftLamp) {
         const leftLamp = streetLampBuilder.build({ x: -3.5, y: 0.15, z: 0 });
@@ -409,12 +400,18 @@ export class ChunkManager {
     
     const obstacleTypes = ['trashCan', 'bench', 'sign'];
     const usedPositions = [];
+    const chunkBalconies = this.balconies.filter(b => b.chunkZ === chunkZ);
+    const SIGN_POST_HEIGHT = 3.0;
     
     for (let i = 0; i < obstacleCount; i++) {
       const side = Math.random() > 0.5 ? 'left' : 'right';
       const sidewalkX = side === 'left' ? -3.5 : 3.5;
       const localZ = -length/2 + 10 + (i * spawnInterval) + Math.random() * 8;
       const worldZ = chunkZ + localZ;
+      
+      // Check for sign posts - don't place under low balconies
+      const balconyAtPos = chunkBalconies.find(b => b.side === side && Math.abs(b.z - localZ) < 3);
+      if (balconyAtPos && balconyAtPos.y < SIGN_POST_HEIGHT) continue;
       
       let tooClose = false;
       for (const pos of usedPositions) {
@@ -449,7 +446,8 @@ export class ChunkManager {
       const type = obstacleTypes[Math.floor(Math.random() * obstacleTypes.length)];
       const obstacle = this.obstacleBuilder.build({ x: 0, y: 0, z: 0 }, type, side);
       const benchX = type === 'bench' ? (side === 'left' ? -4.5 : 4.5) : sidewalkX;
-      obstacle.position.set(benchX, 0.5, localZ);
+      const benchY = type === 'bench' ? 0.15 : 0.5;
+      obstacle.position.set(benchX, benchY, localZ);
       
       obstacle.userData.side = side;
       obstacle.userData.obstacleType = type;
@@ -601,10 +599,12 @@ export class ChunkManager {
       chunk.add(rightBuilding);
       
       if (balconyConfig.leftHasBalcony) {
-        this.balconies.push({ side: 'left', x: -6.5, z: bz + (Math.random() - 0.5), chunkZ });
+        const balconyFloorY = 0.15 + leftHeight * 0.35;
+        this.balconies.push({ side: 'left', x: -6.5, z: bz + (Math.random() - 0.5), chunkZ, y: balconyFloorY });
       }
       if (balconyConfig.rightHasBalcony) {
-        this.balconies.push({ side: 'right', x: 6.5, z: bz + (Math.random() - 0.5), chunkZ });
+        const balconyFloorY = 0.15 + rightHeight * 0.35;
+        this.balconies.push({ side: 'right', x: 6.5, z: bz + (Math.random() - 0.5), chunkZ, y: balconyFloorY });
       }
     }
     this.spawnCarsForChunk(chunk, chunkZ);
@@ -631,6 +631,8 @@ export class ChunkManager {
         this.buildingPositions = this.buildingPositions.filter(
           pos => pos.chunkZ !== removedChunkZ
         );
+        this.balconies = this.balconies.filter(b => b.chunkZ !== removedChunkZ);
+        this.obstacles = this.obstacles.filter(o => o.chunkZ !== removedChunkZ);
         this.lamps = this.lamps.filter(lamp => {
           if (lamp.chunkZ === removedChunkZ) {
             lamp.mesh.traverse((child) => {
@@ -669,6 +671,8 @@ export class ChunkManager {
         this.buildingPositions = this.buildingPositions.filter(
           pos => pos.chunkZ !== removedChunkZ
         );
+        this.balconies = this.balconies.filter(b => b.chunkZ !== removedChunkZ);
+        this.obstacles = this.obstacles.filter(o => o.chunkZ !== removedChunkZ);
         this.lamps = this.lamps.filter(lamp => {
           if (lamp.chunkZ === removedChunkZ) {
             lamp.mesh.traverse((child) => {
