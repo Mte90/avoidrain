@@ -5,7 +5,7 @@
 
 Plan: create a game with pure 100% code by AI and no human intervention in the code, including the assets and debug.
 
-<img width="1832" height="993" alt="Image" src="https://github.com/user-attachments/assets/1c621f12-8132-4a7e-b9a8-d55a8ab269fb" />
+<img width="1862" height="1000" alt="Image" src="https://github.com/user-attachments/assets/42e696ee-2afb-4238-b2ad-1972fbdcb55d" />
 
 ## 🎮 How to Play
 
