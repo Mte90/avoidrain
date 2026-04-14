@@ -20,7 +20,7 @@ export class ObstacleManager {
       const sidewalkX = side * 3.5;
       
       const obstacle = this.createObstacle();
-      obstacle.position.set(sidewalkX, 0.5, chunkZ + (Math.random() - 0.5) * 20);
+      obstacle.position.set(sidewalkX, 0, chunkZ + (Math.random() - 0.5) * 20);
       chunk.add(obstacle);
       
       this.obstacles.push({

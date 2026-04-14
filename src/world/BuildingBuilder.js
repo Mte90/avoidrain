@@ -51,6 +51,9 @@ export class BuildingBuilder {
 
     // Track balcony Y positions to avoid placing windows under balconies
     const balconyYPositions = [];
+    // Track actual window positions and heights to prevent overlap
+    const placedWindows = []; // Array of {y, height, z}
+    
     if (hasBalcony) {
       const balconyFloorY = bottomY + height * 0.35;
       balconyYPositions.push(balconyFloorY);
@@ -76,36 +79,43 @@ export class BuildingBuilder {
         }
         
         // Also skip windows that would overlap with balcony floor
-        let tooCloseToBalcony = false;
+        let skipWindow = false;
         for (const balconyY of balconyYPositions) {
-          if (y + currentWindowHeight / 2 > balconyY - 0.1) {
-            tooCloseToBalcony = true;
-            break;
-          }
-        }
-        if (tooCloseToBalcony) continue;
-
-        // Check if this window overlaps with any other window in the same column
-        // by checking against already placed windows
-        const minWindowGap = 0.2; // Minimum gap between windows
-        for (let prevRow = 0; prevRow < row; prevRow++) {
-          const prevY = bottomY + windowSpacingY * (prevRow + 1);
-          let prevHeight = windowHeight;
-          // Check if previous window was moved under balcony
-          for (const balconyY of balconyYPositions) {
-            if (Math.abs(prevY - balconyY) < 1.0) {
-              prevHeight = 1.8;
+          // Only skip if window is NOT already positioned under the balcony
+          // (i.e., if it's in the original grid position and would intersect)
+          const originalY = bottomY + windowSpacingY * (row + 1);
+          if (Math.abs(y - originalY) < 0.1) {  // This is an original grid position
+            // Skip only if window INTERSECTS balcony floor (not if it's above or below)
+            const windowTop = y + currentWindowHeight / 2;
+            const windowBottom = y - currentWindowHeight / 2;
+            const balconyBottom = balconyY - 0.06; // balcony floor thickness is 0.12, so bottom is at y - 0.06
+            
+            // Skip if window overlaps with balcony floor
+            if (windowTop > balconyBottom && windowBottom < balconyY + 0.06) {
+              skipWindow = true;
               break;
             }
           }
-          const prevTop = prevY + prevHeight / 2;
-          const currentBottom = y - currentWindowHeight / 2;
-          if (currentBottom < prevTop + minWindowGap) {
-            tooCloseToBalcony = true; // Reuse this flag
-            break;
+        }
+        if (skipWindow) continue;
+
+        // Check if this window overlaps with any other window in the same column
+        // by checking against already placed windows (using ACTUAL positions)
+        const minWindowGap = 0.2; // Minimum gap between windows
+        for (const prevWindow of placedWindows) {
+          if (Math.abs(prevWindow.z - z) < 0.1) { // Same column (same Z)
+            const prevTop = prevWindow.y + prevWindow.height / 2;
+            const currentBottom = y - currentWindowHeight / 2;
+            if (currentBottom < prevTop + minWindowGap) {
+              skipWindow = true;
+              break;
+            }
           }
         }
-        if (tooCloseToBalcony) continue;
+        if (skipWindow) continue;
+
+        // Store this window's actual position for future overlap checks
+        placedWindows.push({ y, height: currentWindowHeight, z });
 
         const frameGeo = new THREE.BoxGeometry(0.06, currentWindowHeight + 0.08, windowWidth + 0.08);
         const frameColor = WINDOW_FRAME_COLORS[Math.floor(Math.random() * WINDOW_FRAME_COLORS.length)];
