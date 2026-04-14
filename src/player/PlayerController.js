@@ -2,9 +2,10 @@ import * as THREE from 'three';
 import { CharacterBuilder } from './CharacterBuilder.js';
 
 export class PlayerController {
-  constructor(inputManager, difficultyManager = null) {
+  constructor(inputManager, difficultyManager = null, gameState = null) {
     this.input = inputManager;
     this.difficultyManager = difficultyManager;
+    this.gameState = gameState;
     
     this.LEFT_SIDE = -3.5;
     this.RIGHT_SIDE = 3.5;
@@ -33,6 +34,8 @@ export class PlayerController {
     
     // Hair wetness effect
     this.hairWetness = 0;
+    this.isRaining = false;
+    this.wetnessSpeedModifier = 1.0;
     
     // Collision cooldown
     this.lastCollisionTime = 0;
@@ -77,7 +80,11 @@ export class PlayerController {
   }
   
   update(delta, chunkManager = null) {
-    // Handle input for lane switching
+    // Handle input for lane switching - only in PLAYING state
+    if (this.gameState && this.gameState.getState() !== 'PLAYING') {
+      return; // Ignore all input in MENU state
+    }
+    
     const direction = this.input.getDirection();
     if (direction.x !== 0 && !this.isTransitioning) {
       const wantsRight = direction.x > 0;
@@ -111,6 +118,8 @@ export class PlayerController {
       this.speed = this.difficultyManager.getPlayerSpeed();
     }
     
+    this.speed *= (this.wetnessSpeedModifier || 1.0);
+    
     // Auto-forward movement
     this.group.position.z -= this.speed * delta;
     
@@ -122,12 +131,22 @@ export class PlayerController {
       this.rightLeg.rotation.x = -swing;
     }
     
-    // Animate arms (opposite to legs)
     if (this.leftArm && this.rightArm) {
       const time = performance.now() * 0.001;
       const swing = Math.sin(time * this.legAnimationSpeed) * this.legSwingAngle;
-      this.leftArm.rotation.x = -swing;
-      this.rightArm.rotation.x = swing;
+      
+      let targetLeftRotation, targetRightRotation;
+      
+      if (this.isRaining) {
+        targetLeftRotation = -1.2;
+        targetRightRotation = -1.2;
+      } else {
+        targetLeftRotation = -swing;
+        targetRightRotation = swing;
+      }
+      
+      this.leftArm.rotation.x = THREE.MathUtils.lerp(this.leftArm.rotation.x, targetLeftRotation, 0.1);
+      this.rightArm.rotation.x = THREE.MathUtils.lerp(this.rightArm.rotation.x, targetRightRotation, 0.1);
     }
     
     // Update camera follow
@@ -201,6 +220,20 @@ export class PlayerController {
   
   getHairWetness() {
     return this.hairWetness;
+  }
+  
+  setRainState(isRaining) {
+    this.isRaining = isRaining;
+  }
+  
+  setWetnessSpeedModifier(wetness, sheltered) {
+    if (wetness > 70) {
+      this.wetnessSpeedModifier = 0.9;
+    } else if (wetness < 30 && !sheltered) {
+      this.wetnessSpeedModifier = 1.05;
+    } else {
+      this.wetnessSpeedModifier = 1.0;
+    }
   }
   
   isOnRoad() {

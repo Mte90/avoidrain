@@ -34,7 +34,12 @@ export class PuddleBuilder {
     puddle.position.set(x, 0.15, z);
     puddle.castShadow = false;
     puddle.receiveShadow = false;
-    puddle.userData = { type: 'puddle' };
+    puddle.userData = { 
+      type: 'puddle',
+      baseScale: 1.0,
+      currentScale: 1.0,
+      age: 0
+    };
     
     return puddle;
   }

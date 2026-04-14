@@ -1,6 +1,24 @@
 import * as THREE from 'three';
 import { logger } from '../core/Logger.js';
 
+// Expanded facade palette: 12 diverse colors for building variety
+// Each has dry (roughness 0.85) and wet (40% darker) variants
+export const FACADE_PALETTE = [
+  { key: 'beige', dryColor: 0xD4C4A8, wetColor: 0x8B7D5E },      // Beige
+  { key: 'gray', dryColor: 0xA0A0A0, wetColor: 0x606060 },        // Gray
+  { key: 'cream', dryColor: 0xF5F5DC, wetColor: 0xA0A090 },       // Cream
+  { key: 'terracotta', dryColor: 0xC67B5C, wetColor: 0x7A4A38 },  // Terracotta
+  { key: 'lavender', dryColor: 0xE6E6FA, wetColor: 0x9A9AB0 },    // Lavender
+  { key: 'sage', dryColor: 0x9CAF88, wetColor: 0x6A7A58 },        // Sage green
+  { key: 'peach', dryColor: 0xFFDAB9, wetColor: 0xB09585 },       // Peach
+  { key: 'sky', dryColor: 0x87CEEB, wetColor: 0x5A9AC4 },         // Sky blue
+  { key: 'lavender_gray', dryColor: 0xB8B8D0, wetColor: 0x7A7A90 }, // Lavender gray
+  { key: 'sand', dryColor: 0xC2B280, wetColor: 0x827855 },        // Sand
+  { key: 'mauve', dryColor: 0xE0B0FF, wetColor: 0x9A7AB0 },       // Mauve
+  { key: 'olive', dryColor: 0x808000, wetColor: 0x555533 },       // Olive
+];
+export const FACADE_KEYS = FACADE_PALETTE.map(p => p.key);
+
 export class MaterialCache {
   constructor() {
     this.cache = new Map();
@@ -8,6 +26,26 @@ export class MaterialCache {
   }
 
   init() {
+    // Create facade palette materials (dry and wet variants)
+    for (const facade of FACADE_PALETTE) {
+      // Dry variant
+      const dryMat = new THREE.MeshStandardMaterial({
+        color: facade.dryColor,
+        roughness: 0.85,
+        metalness: 0.02
+      });
+      this.cache.set(`facade-dry-${facade.key}`, dryMat);
+
+      // Wet variant (40% darker)
+      const wetColor = new THREE.Color(facade.wetColor);
+      const wetMat = new THREE.MeshStandardMaterial({
+        color: wetColor,
+        roughness: 0.85,
+        metalness: 0.05
+      });
+      this.cache.set(`facade-wet-${facade.key}`, wetMat);
+    }
+
     const list = [
       ['m-gray', 0x999999, 0.5, 0.05],
       ['m-dark', 0x2C2C2C, 0.8, 0.1],
@@ -21,14 +59,6 @@ export class MaterialCache {
       ['m-yellow', 0xFFFF99, 0.3, 0.0, 0xFFFF00, 0.8],
       ['m-red', 0x8B0000, 0.3, 0.3],
       ['m-purple', 0x667eea, 0.2, 0.8],
-      ['m-facade-1', 0x8B7355, 0.6, 0.1],
-      ['m-facade-2', 0x6B8E23, 0.6, 0.1],
-      ['m-facade-3', 0x4682B4, 0.6, 0.1],
-      ['m-facade-4', 0x556B2F, 0.6, 0.1],
-      ['m-facade-5', 0xA0522D, 0.6, 0.1],
-      ['m-facade-6', 0x708090, 0.6, 0.1],
-      ['m-facade-7', 0x808080, 0.6, 0.1],
-      ['m-facade-8', 0x20B2AA, 0.6, 0.1],
       // Car materials
       ['m-car-body', 0x4A5568, 0.4, 0.6],
       ['m-car-taillight', 0xDC2626, 0.8, 0.3],
@@ -104,7 +134,16 @@ export class MaterialCache {
       return baseMat;
     }
     
-    // Always return a clone to prevent shared material references
+    // CRITICAL: For facade materials, return SHARED reference (no clone)
+    // This allows global wetness lerp to work across all buildings
+    if (key.startsWith('facade-')) {
+      if (Object.keys(overrides).length > 0) {
+        logger.warn('MaterialCache: Facade materials do not support overrides');
+      }
+      return baseMat; // Return shared reference
+    }
+    
+    // For all other materials, clone to allow customization
     const clonedMat = baseMat.clone();
     
     // Apply overrides by cloning material with new parameters

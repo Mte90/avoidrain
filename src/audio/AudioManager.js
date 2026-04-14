@@ -8,11 +8,14 @@ export class AudioManager {
     this.masterGain = null;
     this.rainNode = null;
     this.rainGain = null;
+    this.rainLowpass = null;
     this.rainNoiseBuffer = null;
     this.isMuted = localStorage.getItem('avoidrain-mute') === 'true';
     this.volume = parseFloat(localStorage.getItem('avoidrain-volume')) || 0.5;
     this.isInitialized = false;
     this.footstepInterval = null;
+    this.footstepWetness = false;
+    this.footstepBandpass = null;
     this.gameState = null;
   }
 
@@ -117,10 +120,10 @@ export class AudioManager {
     this.rainNode.loop = true;
 
     // Low-pass filter for rain-like sound
-    const lowpass = this.audioContext.createBiquadFilter();
-    lowpass.type = 'lowpass';
-    lowpass.frequency.value = 800;
-    lowpass.Q.value = 1;
+    this.rainLowpass = this.audioContext.createBiquadFilter();
+    this.rainLowpass.type = 'lowpass';
+    this.rainLowpass.frequency.value = 800;
+    this.rainLowpass.Q.value = 1;
 
     // High-pass to remove rumble
     const highpass = this.audioContext.createBiquadFilter();
@@ -132,8 +135,8 @@ export class AudioManager {
     this.rainGain.gain.value = 0.15;
 
     // Connect: noise -> lowpass -> highpass -> gain -> master
-    this.rainNode.connect(lowpass);
-    lowpass.connect(highpass);
+    this.rainNode.connect(this.rainLowpass);
+    this.rainLowpass.connect(highpass);
     highpass.connect(this.rainGain);
     this.rainGain.connect(this.masterGain);
 
@@ -149,6 +152,10 @@ export class AudioManager {
       this.rainNode.disconnect();
       this.rainNode = null;
     }
+    if (this.rainLowpass) {
+      this.rainLowpass.disconnect();
+      this.rainLowpass = null;
+    }
     if (this.rainGain) {
       this.rainGain.disconnect();
       this.rainGain = null;
@@ -156,10 +163,34 @@ export class AudioManager {
   }
 
   /**
-   * Play footstep sound - short noise burst
+   * Set rain muffled state (under balcony vs outside)
+   * @param {boolean} muffled - true if under shelter, false if outside
    */
-  playFootstep() {
+  setRainMuffled(muffled) {
+    if (!this.rainLowpass || !this.rainGain) return;
+
+    const now = this.audioContext.currentTime;
+    const rampTime = 0.5;
+
+    if (muffled) {
+      // Muffled: lower frequency, quieter
+      this.rainLowpass.frequency.linearRampToValueAtTime(400, now + rampTime);
+      this.rainGain.gain.linearRampToValueAtTime(0.08, now + rampTime);
+    } else {
+      // Not muffled: higher frequency, louder
+      this.rainLowpass.frequency.linearRampToValueAtTime(800, now + rampTime);
+      this.rainGain.gain.linearRampToValueAtTime(0.15, now + rampTime);
+    }
+  }
+
+  /**
+   * Play footstep sound with wet/dry variation
+   * @param {boolean} isWet - true for wet ground (splashing), false for dry
+   */
+  playFootstep(isWet = false) {
     if (!this.isInitialized || this.isMuted) return;
+
+    const now = this.audioContext.currentTime;
 
     // Create short noise burst
     const noiseBuffer = this.createNoiseBuffer(0.05);
@@ -169,13 +200,16 @@ export class AudioManager {
     // Band-pass filter for footstep character
     const bandpass = this.audioContext.createBiquadFilter();
     bandpass.type = 'bandpass';
-    bandpass.frequency.value = 300;
+    bandpass.frequency.value = isWet ? 200 : 300;
     bandpass.Q.value = 2;
 
-    // Quick envelope
+    // Envelope settings based on wetness
+    const duration = isWet ? 0.12 : 0.08;
+    const volume = isWet ? 0.35 : 0.3;
+
     const gain = this.audioContext.createGain();
-    gain.gain.setValueAtTime(0.3, this.audioContext.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.01, this.audioContext.currentTime + 0.08);
+    gain.gain.setValueAtTime(volume, now);
+    gain.gain.exponentialRampToValueAtTime(0.01, now + duration);
 
     // Connect: noise -> bandpass -> gain -> master
     noise.connect(bandpass);
@@ -183,7 +217,48 @@ export class AudioManager {
     gain.connect(this.masterGain);
 
     noise.start();
-    noise.stop(this.audioContext.currentTime + 0.1);
+    noise.stop(now + duration + 0.02);
+
+    // Add splash layer for wet footsteps
+    if (isWet) {
+      this.playFootstepSplash();
+    }
+  }
+
+  /**
+   * Play splash layer for wet footsteps
+   */
+  playFootstepSplash() {
+    if (!this.isInitialized || this.isMuted) return;
+
+    const now = this.audioContext.currentTime;
+
+    const noiseBuffer = this.createNoiseBuffer(0.08);
+    const noise = this.audioContext.createBufferSource();
+    noise.buffer = noiseBuffer;
+
+    const lowpass = this.audioContext.createBiquadFilter();
+    lowpass.type = 'lowpass';
+    lowpass.frequency.value = 1500;
+
+    const gain = this.audioContext.createGain();
+    gain.gain.setValueAtTime(0.15, now);
+    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.06);
+
+    noise.connect(lowpass);
+    lowpass.connect(gain);
+    gain.connect(this.masterGain);
+
+    noise.start();
+    noise.stop(now + 0.1);
+  }
+
+  /**
+   * Update footstep wetness without restarting interval
+   * @param {boolean} isWet - true for wet ground
+   */
+  updateFootstepWetness(isWet) {
+    this.footstepWetness = isWet;
   }
 
   /**
@@ -191,7 +266,7 @@ export class AudioManager {
    */
   startFootsteps() {
     if (this.footstepInterval) return;
-    this.footstepInterval = setInterval(() => this.playFootstep(), 300);
+    this.footstepInterval = setInterval(() => this.playFootstep(this.footstepWetness), 300);
   }
 
   /**
@@ -202,6 +277,72 @@ export class AudioManager {
       clearInterval(this.footstepInterval);
       this.footstepInterval = null;
     }
+  }
+
+  /**
+   * Start traffic ambient sound - filtered white noise with lowpass(150Hz) + highpass(40Hz)
+   */
+  startTrafficAmbient() {
+    if (!this.isInitialized || this.isMuted) return;
+    if (this.trafficRumble) return; // Already playing
+
+    // Use pre-created rain buffer (white noise)
+    const trafficNode = this.audioContext.createBufferSource();
+    trafficNode.buffer = this.rainNoiseBuffer;
+    trafficNode.loop = true;
+
+    // Low-pass filter (150Hz) - removes high frequencies
+    const lowpass = this.audioContext.createBiquadFilter();
+    lowpass.type = 'lowpass';
+    lowpass.frequency.value = 150;
+    lowpass.Q.value = 1;
+
+    // High-pass filter (40Hz) - removes deep rumble
+    const highpass = this.audioContext.createBiquadFilter();
+    highpass.type = 'highpass';
+    highpass.frequency.value = 40;
+
+    // Base gain for traffic volume
+    this.trafficGain = this.audioContext.createGain();
+    this.trafficGain.gain.value = 0.05;
+
+    // Connect: noise -> lowpass -> highpass -> gain -> master
+    trafficNode.connect(lowpass);
+    lowpass.connect(highpass);
+    highpass.connect(this.trafficGain);
+    this.trafficGain.connect(this.masterGain);
+
+    trafficNode.start();
+    this.trafficRumble = { node: trafficNode, lowpass: lowpass, highpass: highpass, gain: this.trafficGain };
+  }
+
+  /**
+   * Stop traffic ambient sound
+   */
+  stopTrafficAmbient() {
+    if (this.trafficRumble) {
+      this.trafficRumble.node.stop();
+      this.trafficRumble.node.disconnect();
+      this.trafficRumble.lowpass.disconnect();
+      this.trafficRumble.highpass.disconnect();
+      this.trafficRumble.gain.disconnect();
+      this.trafficRumble = null;
+    }
+  }
+
+  /**
+   * Update traffic volume based on car count
+   * Formula: 0.03 + Math.min(carCount, 12) * 0.005
+   */
+  updateTrafficVolume(carCount) {
+    if (!this.trafficRumble) return;
+
+    const targetVolume = 0.03 + Math.min(carCount, 12) * 0.005;
+    this.trafficRumble.gain.gain.setTargetAtTime(
+      targetVolume,
+      this.audioContext.currentTime,
+      0.3
+    );
   }
 
   /**

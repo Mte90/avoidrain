@@ -16,6 +16,10 @@ import { ObstacleManager } from './items/ObstacleManager.js';
 import { PortalManager } from './utils/PortalManager.js';
 import { MenuDemoManager } from './systems/MenuDemoManager.js';
 import { CollisionManager } from './systems/CollisionManager.js';
+import { RippleSystem } from './world/RippleSystem.js';
+import { ambientMusic } from './audio/AmbientMusic.js';
+import { WindSystem } from './environment/WindSystem.js';
+import { WindowSystem } from './environment/WindowSystem.js';
 import { PLAYER, BOUNDARIES, SCORING, CAMERA, RENDERER, FOG, SCENE_BG, LIGHTNING, LIGHT, JUICE, RAIN, COLLISION, SIDEWALK } from './core/Constants.js';
 import { gameEvents } from './core/EventBus.js';
 
@@ -72,7 +76,7 @@ export class Game {
     this.audioManager = audioManager;
     this.uiManager = new UIManager();
 
-    this.player = new PlayerController(this.input, this.difficultyManager);
+    this.player = new PlayerController(this.input, this.difficultyManager, this.gameState);
     this.player.setCamera(this.camera);
     this.scene.add(this.player.getGroup());
 
@@ -83,12 +87,16 @@ export class Game {
     this.rainSystem = new RainSystem(this.scene, RAIN.INTENSITY);
     this.rainSystem.setDifficultyManager(this.difficultyManager);
 
+    this.windSystem = new WindSystem();
+    this.windowSystem = new WindowSystem();
+
     this.wetMeter = new WetMeter(this.gameState);
     this.powerUpManager = new PowerUpManager(this.scene, this.player, this.wetMeter, this.difficultyManager);
     this.portalManager = new PortalManager();
     this.juiceSystem = new JuiceSystem(this.scene);
     this.obstacleManager = new ObstacleManager(this.scene);
     this.collisionManager = new CollisionManager();
+    this.rippleSystem = new RippleSystem(this.scene);
     this.menuDemoManager = new MenuDemoManager(this.player, this.camera, this.chunkManager, this.difficultyManager);
 
     // Check for portal params from previous game
@@ -139,12 +147,29 @@ export class Game {
     this._onMuteClick = (e) => {
       e.stopPropagation();
       const isMuted = this.audioManager.toggleMute();
+      ambientMusic.setMuted(isMuted);
       muteBtn.textContent = isMuted ? '🔇' : '🔊';
+    };
+
+    // Visibility change handler - stop music when tab hidden, restart when visible
+    this._onVisibilityChange = () => {
+      if (document.hidden) {
+        // Tab hidden - stop music
+        if (this.gameState.getState() === GameState.PLAYING) {
+          ambientMusic.stop();
+        }
+      } else {
+        // Tab visible - restart music if playing
+        if (this.gameState.getState() === GameState.PLAYING) {
+          ambientMusic.start();
+        }
+      }
     };
 
     window.addEventListener('resize', this._onResize);
     document.addEventListener('keydown', this._onKeyDown);
     document.addEventListener('click', this._onClick);
+    document.addEventListener('visibilitychange', this._onVisibilityChange);
 
     const muteBtn = document.getElementById('mute-btn');
     if (muteBtn) {
@@ -157,6 +182,7 @@ export class Game {
     window.removeEventListener('resize', this._onResize);
     document.removeEventListener('keydown', this._onKeyDown);
     document.removeEventListener('click', this._onClick);
+    document.removeEventListener('visibilitychange', this._onVisibilityChange);
     
     const muteBtn = document.getElementById('mute-btn');
     if (muteBtn) {
@@ -167,6 +193,8 @@ export class Game {
       this.fpsElement.remove();
       this.fpsElement = null;
     }
+    
+    ambientMusic.dispose();
   }
 
   handleEnterKey() {
@@ -195,6 +223,9 @@ export class Game {
     this.menuDemoManager.start();
     this.audioManager.playRain();
     this.audioManager.startFootsteps();
+    this.audioManager.startTrafficAmbient();
+    this.windowSystem.start();
+    ambientMusic.start();
   }
 
   restartGame() {
@@ -203,6 +234,8 @@ export class Game {
     this.menuDemoManager.start();
     this.audioManager.playRain();
     this.audioManager.startFootsteps();
+    this.audioManager.startTrafficAmbient();
+    ambientMusic.start();
   }
 
   resetGame() {
@@ -210,6 +243,7 @@ export class Game {
     this.difficultyManager.reset();
     this.scoreManager.reset();
     this.wetMeter.reset();
+    this.windSystem.reset();
     
     this.portalManager.dispose(this.scene);
     this.rainSystem.dispose();
@@ -236,7 +270,10 @@ export class Game {
   handleGameOver() {
     this.audioManager.stopFootsteps();
     this.audioManager.stopRain();
+    this.audioManager.stopTrafficAmbient();
+    ambientMusic.stop();
     this.audioManager.playGameOver();
+    this.juiceSystem.resetShake();
     this.uiManager.setGameOverScore(this.scoreManager.getScore());
     
     const exitURL = PortalManager.createExitURL(
@@ -282,6 +319,10 @@ export class Game {
       this.player.update(delta);
       this.rainSystem.update(delta);
       this.chunkManager.updateCars(delta);
+      this.chunkManager.updatePuddles(delta);
+      this.chunkManager.updatePedestrians(delta);
+      this.chunkManager.updateBuildingWetness(this.difficultyManager.getRainIntensity(), this.gameTime);
+      this.rippleSystem.update(delta, this.chunkManager.puddles);
       // Update chunks in demo mode too (player moves in demo)
       const playerPos = this.player.getPosition();
       this.chunkManager.update(playerPos.z);
@@ -301,19 +342,27 @@ export class Game {
       this.player.update(delta, this.chunkManager);
       this.chunkManager.update(playerPos.z);
       this.chunkManager.updateCars(delta);
+      this.chunkManager.updatePuddles(delta);
+      this.chunkManager.updatePedestrians(delta);
+      this.chunkManager.updateBuildingWetness(this.difficultyManager.getRainIntensity(), this.gameTime);
+      this.rippleSystem.update(delta, this.chunkManager.puddles);
       this.rainSystem.update(delta);
+      
+      this.windSystem.update(delta, this.difficultyManager.getDifficultyMultiplier());
 
       this.backdropBuilder.updateBuildingPositions(this.backdrop, playerPos.z);
 
       const chunks = this.chunkManager.getActiveChunks();
       const cars = this.chunkManager.cars;
       const puddles = this.chunkManager.puddles;
-      const wasHit = this.wetMeter.update(delta, playerPos, chunks, cars, puddles);
+      const balconies = this.chunkManager.balconies;
+      const wasHit = this.wetMeter.update(delta, playerPos, chunks, cars, puddles, balconies);
       
       if (wasHit) {
         this.audioManager.playSplash();
         this.juiceSystem.addScreenShake(JUICE.SCREEN_SHAKE_INTENSITY);
         this.uiManager.showNotification('💥 Hit!', 'hit');
+        this.rippleSystem.triggerSplash(playerPos.x, 0.15, playerPos.z);
       }
 
       const pushback = this.wetMeter.getPushbackVelocity();
@@ -335,13 +384,37 @@ export class Game {
         this.wasUnderShelter = false;
       }
 
+      this.audioManager.setRainMuffled(this.wetMeter.getIsUnderShelter());
+      this.audioManager.updateFootstepWetness(this.wetMeter.getWetMeter() > 20);
+
       this.scoreManager.setDistance(-playerPos.z);
       this.scoreManager.update(delta, this.wetMeter.getIsUnderShelter());
 
       this.player.setHairWetness(this.wetMeter.getWetMeter());
+      this.player.setRainState(!this.wetMeter.getIsUnderShelter());
+      this.player.setWetnessSpeedModifier(this.wetMeter.getWetMeter(), this.wetMeter.getIsUnderShelter());
+      
+      // Car horn feedback
+      if (this.chunkManager.checkCarHorn(playerPos)) {
+        this.audioManager.playHorn();
+      }
+      
+      // Update traffic volume based on car count (0.03 + Math.min(carCount, 12) * 0.005)
+      this.audioManager.updateTrafficVolume(this.chunkManager.cars.filter(c => c.visible).length);
       
       this.powerUpManager.update(delta, playerPos);
       this.juiceSystem.update(delta);
+      
+      if (this.difficultyManager.isStorm()) {
+        this.scene.fog.near = FOG.DENSE_NEAR;
+        this.scene.fog.far = FOG.DENSE_FAR;
+      } else if (this.difficultyManager.isCalm()) {
+        this.scene.fog.near = FOG.LIGHT_NEAR;
+        this.scene.fog.far = FOG.LIGHT_FAR;
+      } else {
+        this.scene.fog.near = FOG.NEAR;
+        this.scene.fog.far = FOG.FAR;
+      }
     }
 
     if (state === GameState.MENU || state === GameState.PLAYING) {

@@ -34,6 +34,10 @@ export const FOG = {
   COLOR: 0x8899aa,
   NEAR: 25,
   FAR: 90,
+  DENSE_NEAR: 15,
+  DENSE_FAR: 60,
+  LIGHT_NEAR: 35,
+  LIGHT_FAR: 120,
 };
 
 export const SCENE_BG = 0x3a4a5a;
@@ -63,7 +67,7 @@ export const JUICE = {
 
 export const RAIN = {
   INTENSITY: 0.5,
-  WETNESS_FILL_RATE: 15,
+  WETNESS_FILL_RATE: 8,
   WETNESS_DRAIN_RATE: 20,
   GAME_OVER_THRESHOLD: 100,
 };

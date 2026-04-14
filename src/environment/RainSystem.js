@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { gameEvents } from '../core/EventBus.js';
 
 const RAIN_COUNT = 3000;
 const VOLUME_WIDTH = 60;
@@ -11,12 +12,17 @@ export class RainSystem {
     this.rainIntensity = rainIntensity;
     this.difficultyManager = null;
     this.playerPosition = new THREE.Vector3(0, 0, 0);
+    this.windAngle = 0;
     
     this.velocities = new Float32Array(RAIN_COUNT);
     this.initialVelocities = new Float32Array(RAIN_COUNT);
     
     this.createRain();
     this.scene.add(this.rainLines);
+    
+    this.unsubscribe = gameEvents.subscribe('wind:changed', (data) => {
+      this.windAngle = data.windAngle;
+    });
   }
 
   createRain() {
@@ -94,6 +100,10 @@ export class RainSystem {
       positions[i6 + 1] -= this.velocities[i] * delta * speedMultiplier;
       positions[i6 + 4] -= this.velocities[i] * delta * speedMultiplier;
       
+      const windDrift = this.windAngle * this.velocities[i] * delta;
+      positions[i6] += windDrift;
+      positions[i6 + 3] += windDrift;
+      
       if (positions[i6 + 1] < 0.5) {        const newY = VOLUME_HEIGHT;
         const newX = (Math.random() - 0.5) * VOLUME_WIDTH;
         const newZ = (Math.random() - 0.5) * VOLUME_DEPTH;
@@ -102,7 +112,7 @@ export class RainSystem {
         positions[i6] = newX;
         positions[i6 + 1] = newY;
         positions[i6 + 2] = newZ;
-        positions[i6 + 3] = newX;
+        positions[i6 + 3] = newX - this.windAngle * dropLength;
         positions[i6 + 4] = newY - dropLength;
         positions[i6 + 5] = newZ;
       }
@@ -142,6 +152,9 @@ export class RainSystem {
   }
 
   dispose() {
+    if (this.unsubscribe) {
+      this.unsubscribe();
+    }
     this.scene.remove(this.rainLines);
     this.rainLines.geometry.dispose();
     this.rainLines.material.dispose();

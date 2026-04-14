@@ -14,6 +14,10 @@ export class JuiceSystem {
     this.shakeIntensity = Math.min(this.shakeIntensity + intensity, 0.5);
   }
 
+  resetShake() {
+    this.shakeIntensity = 0;
+  }
+
   createExplosion(position, color = 0xFFFF00, count = 15) {
     const particleGeo = new THREE.SphereGeometry(0.1, 8, 8);
     

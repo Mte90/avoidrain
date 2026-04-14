@@ -6,11 +6,36 @@ import { GroundBuilder } from './GroundBuilder.js';
 import { PuddleBuilder } from './PuddleBuilder.js';
 import { StreetLampBuilder } from './StreetLampBuilder.js';
 import { ObstacleBuilder } from './ObstacleBuilder.js';
+import { PedestrianBuilder } from './PedestrianBuilder.js';
 import { DifficultyManager } from '../systems/DifficultyManager.js';
 import { RENDERER } from '../core/Constants.js';
 
 const CHUNK_SIZE = 40;
 const MAX_CARS = 12;
+const MAX_PEDESTRIANS = 8;
+const SIDEWALK_LEFT = -3.5;
+const SIDEWALK_RIGHT = 3.5;
+
+const PED_STATES = {
+  WALKING: 'walking',
+  SEEKING: 'seeking',
+  SHELTERING: 'sheltering'
+};
+
+const PED_TRANSITIONS = {
+  [PED_STATES.WALKING]: {
+    condition: (ped, rainIntensity) => rainIntensity > 0.7 && !ped.userData.hasUmbrella,
+    nextState: PED_STATES.SEEKING
+  },
+  [PED_STATES.SEEKING]: {
+    condition: (ped, rainIntensity, arrived) => arrived,
+    nextState: PED_STATES.SHELTERING
+  },
+  [PED_STATES.SHELTERING]: {
+    condition: (ped, rainIntensity) => rainIntensity < 0.5,
+    nextState: PED_STATES.WALKING
+  }
+};
 const BUILDING_ZONE_LEFT = { min: -13, max: -5.5 };
 const BUILDING_ZONE_RIGHT = { min: 5.5, max: 13 };
 const SIDEWALK_ZONE_LEFT = { min: -4.5, max: -2.5 };
@@ -38,10 +63,16 @@ export class ChunkManager {
     this.obstacles = [];
     this.lamps = [];
     this.balconies = [];
+    this.buildings = [];
+    this.dripLines = [];
     
     this.puddleBuilder = new PuddleBuilder();
     this.lastGeneratedChunkZ = 0;
     this.obstacleBuilder = new ObstacleBuilder();
+    this.pedestrianBuilder = new PedestrianBuilder();
+
+    this.pedestrians = [];
+    this.pedestrianPool = [];
     
     // Create global ground immediately in constructor
     this.createGlobalGround();
@@ -87,6 +118,8 @@ export class ChunkManager {
     this.puddles = [];
     this.obstacles = [];
     this.lamps = [];
+    this.pedestrians = [];
+    this.pedestrianPool = [];
     
     this.createGlobalGround();
   }
@@ -177,6 +210,12 @@ export class ChunkManager {
         chunk.add(leftBuilding);
         this.buildingPositions.push({ side: 'left', minZ: leftMinZ, maxZ: leftMaxZ, chunkZ });
         buildingsInThisChunk.push({ side: 'left', minZ: leftMinZ, maxZ: leftMaxZ });
+        this.buildings.push({ group: leftBuilding, chunkZ });
+        if (leftBuilding.userData.dripLines) {
+          for (const drip of leftBuilding.userData.dripLines) {
+            this.dripLines.push({ mesh: drip, chunkZ });
+          }
+        }
         if (balconyConfig.leftHasBalcony) {
           const balconyFloorY = 0.15 + leftHeight * 0.35;
           this.balconies.push({ side: 'left', x: -6.5, z: bz + (Math.random() - 0.5), chunkZ, y: balconyFloorY });
@@ -215,6 +254,12 @@ export class ChunkManager {
         chunk.add(rightBuilding);
         this.buildingPositions.push({ side: 'right', minZ: rightMinZ, maxZ: rightMaxZ, chunkZ });
         buildingsInThisChunk.push({ side: 'right', minZ: rightMinZ, maxZ: rightMaxZ });
+        this.buildings.push({ group: rightBuilding, chunkZ });
+        if (rightBuilding.userData.dripLines) {
+          for (const drip of rightBuilding.userData.dripLines) {
+            this.dripLines.push({ mesh: drip, chunkZ });
+          }
+        }
         if (balconyConfig.rightHasBalcony) {
           const balconyFloorY = 0.15 + rightHeight * 0.35;
           this.balconies.push({ side: 'right', x: 6.5, z: bz + (Math.random() - 0.5), chunkZ, y: balconyFloorY });
@@ -272,8 +317,143 @@ export class ChunkManager {
     this.spawnStreetLampsForChunk(chunk, chunkZ);
     this.spawnPuddlesForChunk(chunk, chunkZ);
     this.spawnObstaclesForChunk(chunk, chunkZ);
+    this.spawnPedestriansForChunk(chunk, chunkZ);
 
     return chunk;
+  }
+
+  spawnPedestriansForChunk(chunk, chunkZ) {
+    if (this.pedestrians.length >= MAX_PEDESTRIANS) return;
+    
+    if (Math.random() < 0.5) {
+      const side = Math.random() > 0.5 ? 'left' : 'right';
+      const sidewalkX = side === 'left' ? SIDEWALK_LEFT : SIDEWALK_RIGHT;
+      const direction = side === 'left' ? 1 : -1;
+      
+      const length = CHUNK_SIZE;
+      const localZ = -length / 2 + 5 + Math.random() * (length - 10);
+      const worldZ = chunkZ + localZ;
+
+      const hasOverlap = this.pedestrians.some(p => {
+        return Math.abs(p.position.z - worldZ) < 8 && 
+               ((p.position.x > 0 && sidewalkX > 0) || (p.position.x < 0 && sidewalkX < 0));
+      });
+
+      if (hasOverlap) return;
+
+      let pedestrian;
+      if (this.pedestrianPool.length > 0) {
+        pedestrian = this.pedestrianPool.pop();
+        pedestrian.visible = true;
+      } else {
+        pedestrian = this.pedestrianBuilder.build({ x: sidewalkX, y: 0, z: worldZ });
+      }
+
+      pedestrian.position.z = worldZ;
+      pedestrian.userData.direction = direction;
+      pedestrian.userData.state = PED_STATES.WALKING;
+      pedestrian.userData.chunkZ = chunkZ;
+      pedestrian.userData.side = side;
+
+      chunk.add(pedestrian);
+      this.pedestrians.push(pedestrian);
+    }
+  }
+
+  findNearestBalcony(pedestrian) {
+    const side = pedestrian.userData.side;
+    const pos = pedestrian.position;
+    
+    let nearest = null;
+    let nearestDist = Infinity;
+
+    for (const balcony of this.balconies) {
+      if (balcony.side !== side) continue;
+      
+      const dist = Math.abs(balcony.z - pos.z);
+      if (dist < nearestDist && dist < 20) {
+        nearest = balcony;
+        nearestDist = dist;
+      }
+    }
+
+    return nearest;
+  }
+
+  recyclePedestrian(pedestrian) {
+    const index = this.pedestrians.indexOf(pedestrian);
+    if (index > -1) {
+      this.pedestrians.splice(index, 1);
+    }
+    pedestrian.visible = false;
+    this.pedestrianPool.push(pedestrian);
+  }
+
+  updatePedestrians(delta) {
+    if (!this.difficultyManager) return;
+    
+    const rainIntensity = this.difficultyManager.getRainIntensity();
+
+    for (const ped of this.pedestrians) {
+      const currentState = ped.userData.state;
+      const transition = PED_TRANSITIONS[currentState];
+      
+      if (!transition) continue;
+
+      let arrived = false;
+      
+      if (currentState === PED_STATES.SEEKING) {
+        const target = ped.userData.targetBalcony;
+        if (target) {
+          const dx = target.x - ped.position.x;
+          const dz = target.z - ped.position.z;
+          const dist = Math.sqrt(dx * dx + dz * dz);
+          
+          if (dist < 1.5) {
+            arrived = true;
+            ped.userData.targetBalcony = null;
+          } else {
+            const speed = 4;
+            const angle = Math.atan2(dz, dx);
+            ped.position.x += Math.cos(angle) * speed * delta;
+            ped.position.z += Math.sin(angle) * speed * delta;
+          }
+        }
+      }
+
+      const shouldTransition = transition.condition(ped, rainIntensity, arrived);
+      
+      if (shouldTransition && transition.nextState) {
+        const newState = transition.nextState;
+        
+        if (newState === PED_STATES.SEEKING && !ped.userData.hasUmbrella) {
+          const balcony = this.findNearestBalcony(ped);
+          if (balcony) {
+            ped.userData.targetBalcony = balcony;
+            ped.userData.state = newState;
+          }
+        } else if (newState === PED_STATES.SHELTERING) {
+          ped.userData.state = newState;
+        } else if (newState === PED_STATES.WALKING) {
+          ped.userData.state = newState;
+          ped.userData.targetBalcony = null;
+        }
+      }
+
+      if (ped.userData.state === PED_STATES.WALKING || ped.userData.state === PED_STATES.SEEKING) {
+        const speed = ped.userData.state === PED_STATES.SEEKING ? 4 : 2;
+        ped.position.z += speed * ped.userData.direction * delta;
+        
+        if (ped.position.z > this.playerZ + 100 || ped.position.z < this.playerZ - 100) {
+          this.recyclePedestrian(ped);
+          continue;
+        }
+        
+        this.pedestrianBuilder.animateWalk(ped, delta);
+      } else {
+        this.pedestrianBuilder.stopAnimation(ped);
+      }
+    }
   }
 
   spawnCarsForChunk(chunk, chunkZ) {
@@ -299,6 +479,16 @@ export class ChunkManager {
         } else {
           carZ = chunkZ + length / 2 - 2;
         }
+        
+        const overlap = this.cars.some(c => {
+          const cDir = c.userData.direction || 1;
+          if (cDir !== direction) return false;
+          const cLane = c.position.x;
+          if (Math.abs(cLane - lane) > 0.5) return false;
+          return Math.abs(c.position.z - carZ) < 15;
+        });
+        
+        if (overlap) continue; // Skip spawning this car
         
         const car = this.createCar({ x: lane, y: 0.15, z: carZ });
         car.userData.direction = direction;
@@ -480,6 +670,7 @@ export class ChunkManager {
     }
     
     car.position.set(position.x, position.y, position.z);
+    car.userData.speed = 8 + Math.random() * 6; // 8-14 m/s realistic city speeds
     this.cars.push(car);
     return car;
   }
@@ -598,6 +789,17 @@ export class ChunkManager {
       });
       chunk.add(rightBuilding);
       
+      // Track buildings for wetness updates
+      this.buildings.push({ group: leftBuilding, chunkZ });
+      this.buildings.push({ group: rightBuilding, chunkZ });
+      // Extract and track drip lines from buildings
+      leftBuilding.userData.dripLines.forEach(drip => {
+        this.dripLines.push({ mesh: drip, chunkZ });
+      });
+      rightBuilding.userData.dripLines.forEach(drip => {
+        this.dripLines.push({ mesh: drip, chunkZ });
+      });
+      
       if (balconyConfig.leftHasBalcony) {
         const balconyFloorY = 0.15 + leftHeight * 0.35;
         this.balconies.push({ side: 'left', x: -6.5, z: bz + (Math.random() - 0.5), chunkZ, y: balconyFloorY });
@@ -632,6 +834,8 @@ export class ChunkManager {
           pos => pos.chunkZ !== removedChunkZ
         );
         this.balconies = this.balconies.filter(b => b.chunkZ !== removedChunkZ);
+        this.buildings = this.buildings.filter(b => b.chunkZ !== removedChunkZ);
+        this.dripLines = this.dripLines.filter(d => d.chunkZ !== removedChunkZ);
         this.obstacles = this.obstacles.filter(o => o.chunkZ !== removedChunkZ);
         this.lamps = this.lamps.filter(lamp => {
           if (lamp.chunkZ === removedChunkZ) {
@@ -655,6 +859,14 @@ export class ChunkManager {
           }
           return true;
         });
+
+        for (const ped of this.pedestrians) {
+          if (ped.userData.chunkZ === removedChunkZ) {
+            this.recyclePedestrian(ped);
+          }
+        }
+        this.pedestrians = this.pedestrians.filter(p => p.userData.chunkZ !== removedChunkZ && p.visible);
+
         this.scene.remove(chunk);
         chunk.visible = false;
         this.chunkPool.push(chunk);
@@ -672,6 +884,8 @@ export class ChunkManager {
           pos => pos.chunkZ !== removedChunkZ
         );
         this.balconies = this.balconies.filter(b => b.chunkZ !== removedChunkZ);
+        this.buildings = this.buildings.filter(b => b.chunkZ !== removedChunkZ);
+        this.dripLines = this.dripLines.filter(d => d.chunkZ !== removedChunkZ);
         this.obstacles = this.obstacles.filter(o => o.chunkZ !== removedChunkZ);
         this.lamps = this.lamps.filter(lamp => {
           if (lamp.chunkZ === removedChunkZ) {
@@ -714,21 +928,151 @@ export class ChunkManager {
     }
   }
 
-  updateCars(delta) {
-    const carSpeed = 8;
-    for (let i = this.cars.length - 1; i >= 0; i--) {
-      const car = this.cars[i];
-      const direction = car.userData.direction || 1;
-      car.position.z += carSpeed * direction * delta;
+  checkCarHorn(playerPos) {
+    const HORN_DISTANCE = 8;
+    const HORN_COOLDOWN = 4;
+    const playerX = playerPos.x;
+
+    if (playerX >= 2.5 || playerX <= -2.5) return false;
+
+    for (const car of this.cars) {
+      const dx = Math.abs(car.position.x - playerX);
+      const dz = Math.abs(car.position.z - playerPos.z);
       
-      // Hide cars when they go out of view behind camera
-      const cameraZ = 180;
-      if (direction > 0 && car.position.z > cameraZ + 2) {
-        car.visible = false;
-      } else if (direction < 0 && car.position.z < -cameraZ - 2) {
-        car.visible = false;
-      } else {
-        car.visible = true;
+      if (dx < 2.5 && dz < HORN_DISTANCE) {
+        const cooldown = car.userData.lastHornTime || 0;
+        const now = performance.now() / 1000;
+        
+        if (now - cooldown > HORN_COOLDOWN) {
+          car.userData.lastHornTime = now;
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
+  updateCars(delta) {
+    const lanes = { left: [], right: [] };
+    const SAFE_DISTANCE = 12;
+    const cameraZ = 180;
+
+    for (const car of this.cars) {
+      const lane = car.userData.direction > 0 ? 'right' : 'left';
+      lanes[lane].push(car);
+    }
+
+    for (const lane of ['left', 'right']) {
+      lanes[lane].sort((a, b) => lane === 'right' 
+        ? a.position.z - b.position.z 
+        : b.position.z - a.position.z
+      );
+
+      for (let i = 0; i < lanes[lane].length; i++) {
+        const car = lanes[lane][i];
+        const baseSpeed = car.userData.speed || 8;
+        const direction = car.userData.direction || 1;
+        let speed = baseSpeed;
+
+        if (i > 0) {
+          const carAhead = lanes[lane][i - 1];
+          const distToCarAhead = Math.abs(carAhead.position.z - car.position.z);
+          
+          if (distToCarAhead < SAFE_DISTANCE) {
+            const slowdownFactor = Math.max(0.2, (distToCarAhead - 3) / (SAFE_DISTANCE - 3));
+            speed = baseSpeed * slowdownFactor;
+          }
+        }
+
+        car.position.z += speed * direction * delta;
+
+        if (direction > 0 && car.position.z > cameraZ + 2) {
+          car.visible = false;
+        } else if (direction < 0 && car.position.z < -cameraZ - 2) {
+          car.visible = false;
+        } else {
+          car.visible = true;
+        }
+      }
+    }
+  }
+
+  updatePuddles(delta) {
+    if (!this.difficultyManager) return;
+    const rainIntensity = this.difficultyManager.getRainIntensity();
+    
+    for (const puddleData of this.puddles) {
+      const mesh = puddleData.mesh;
+      mesh.userData.age += delta;
+      
+      // Reduced growth under balconies
+      const px = mesh.position.x;
+      const pz = mesh.position.z;
+      let underBalcony = false;
+      for (const b of this.balconies) {
+        if (Math.abs(px - b.x) < 3 && Math.abs(pz - b.z) < 5) {
+          underBalcony = true;
+          break;
+        }
+      }
+      
+      const growthRate = underBalcony ? 0.02 : 0.08;
+      const targetScale = 1.0 + Math.min(mesh.userData.age * growthRate * rainIntensity, 0.5);
+      mesh.userData.currentScale = targetScale;
+      mesh.scale.set(targetScale, 1, targetScale);
+    }
+  }
+
+  updateBuildingWetness(rainIntensity, gameTime) {
+    if (!this.difficultyManager) return;
+    
+    for (const buildingData of this.buildings) {
+      const building = buildingData.group;
+      const facadeKey = building.userData.facadeKey;
+      
+      if (!facadeKey) continue;
+      
+      const wetMat = materialCache.cache.get(`facade-wet-${facadeKey}`);
+      const dryMat = materialCache.cache.get(`facade-dry-${facadeKey}`);
+      if (!wetMat || !dryMat) continue;
+      
+      building.traverse((child) => {
+        if (child.isMesh && child.material && child.material.color) {
+          if (child.material.emissive && child.material.emissiveIntensity > 0) return;
+          if (child.material.transparent && child.material.opacity < 0.95) return;
+          if (child.userData.isDoor || child.userData.isDoorHandle) return;
+          if (child.material.color.getHex() === 0x8B4513) return;
+          if (child.material.color.getHex() === 0x8B0000) return;
+          if (child.material.userData && child.material.userData.isFacade) {
+            if (!child.userData._facadeColor) {
+              const dryMat = materialCache.cache.get(`facade-dry-${child.material.userData.facadeKey}`);
+              child.userData._facadeColor = dryMat.color.clone();
+            }
+            const wetMat = materialCache.cache.get(`facade-wet-${child.material.userData.facadeKey}`);
+            const dryMat = materialCache.cache.get(`facade-dry-${child.material.userData.facadeKey}`);
+            const lerpFactor = rainIntensity * 0.4;
+            child.userData._facadeColor.lerpColors(dryMat.color, wetMat.color, lerpFactor);
+            child.material.color.copy(child.userData._facadeColor);
+          }
+        }
+      });
+      
+      for (const drip of building.userData.dripLines || []) {
+        if (!drip.userData.phase) continue;
+        
+        const phase = drip.userData.phase;
+        const baseY = drip.userData.baseY;
+        const progress = (Math.sin(gameTime * 3 + phase) + 1) / 2;
+        
+        if (rainIntensity > 0.1) {
+          drip.scale.y = 0.1 + progress * 0.9 * rainIntensity;
+          drip.position.y = baseY - progress * 0.25 * rainIntensity;
+          drip.visible = true;
+        } else {
+          drip.scale.y = 0.1;
+          drip.position.y = baseY;
+          drip.visible = false;
+        }
       }
     }
   }

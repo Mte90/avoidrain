@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { GameState } from './GameState.js';
 import { RAIN } from '../core/Constants.js';
+import { gameEvents } from '../core/EventBus.js';
 
 const CAR_HIT_PENALTY = 20;
 const PUDDLE_WETNESS = 5;
@@ -24,6 +25,11 @@ export class WetMeter {
     this.carHitCooldown = 1.0;
     this.pushbackVelocity = 0;
     this.pushbackDecay = 5.0;
+    this.windAngle = 0;
+    
+    this.unsubscribe = gameEvents.subscribe('wind:changed', (data) => {
+      this.windAngle = data.windAngle;
+    });
   }
 
   checkAABBCollision(ax, az, aw, ad, bx, bz, bw, bd) {
@@ -35,38 +41,38 @@ export class WetMeter {
     );
   }
 
-  checkBalconyShelter(playerX, playerZ, chunks) {
+  checkBalconyShelter(playerX, playerZ, chunks, balconies = []) {
     const playerWidth = PLAYER_RADIUS * 2;
     const playerDepth = PLAYER_RADIUS * 2;
+    const playerY = 0.1;
     
-    for (const chunk of chunks) {
-      const chunkZ = chunk.position.z;
+    for (const balcony of balconies) {
+      // Balcony protrudes 2.5m from building edge
+      // Left building at x=-6.5, width=2.5 → building right edge at -5.25
+      // Balcony extends from -5.25 to -2.75 (center at -4.0)
+      // Right building at x=6.5, width=2.5 → building left edge at 5.25
+      // Balcony extends from 5.25 to 2.75 (center at 4.0)
+      const buildingWidth = 2.5;
+      const balconyProtrusion = 2.5;
       
-      for (const child of chunk.children) {
-        if (child instanceof THREE.Group) {
-          const hasBalcony = this.checkHasBalcony(child);
-          if (!hasBalcony) continue;
-          
-          const buildingX = child.position.x;
-          const buildingZ = child.position.z;
-          const buildingWorldZ = chunkZ + buildingZ;
-          // Building at x=-6.5, width=2.5, balcony protrudes 2.5 toward road
-          // Building edge: -6.5 + 1.25 = -5.25
-          // Balcony center: -5.25 + 1.25 = -4.0 (covers -5.25 to -2.75)
-          // Left sidewalk: -4.5 to -2.5, player at -3.5
-          // Right building at x=6.5: edge at 5.25, balcony covers 2.75 to 5.25
-          const buildingWidth = 2.5;
-          const balconyProtrusion = 2.5;
-          const buildingEdge = buildingX < 0 ? buildingX + buildingWidth / 2 : buildingX - buildingWidth / 2;
-          const shelterX = buildingEdge + (buildingX < 0 ? balconyProtrusion / 2 : -balconyProtrusion / 2);
-          const shelterZ = buildingWorldZ;
-          
-          if (this.checkAABBCollision(
-            playerX, playerZ, playerWidth, playerDepth,
-            shelterX, shelterZ, BALCONY_WIDTH, BALCONY_DEPTH
-          )) {
-            return true;
-          }
+      const buildingEdge = balcony.x < 0 
+        ? balcony.x + buildingWidth / 2  // Right edge of left building
+        : balcony.x - buildingWidth / 2;  // Left edge of right building
+      
+      const shelterCenterX = buildingEdge + (balcony.x < 0 ? balconyProtrusion / 2 : -balconyProtrusion / 2);
+      const shelterZ = balcony.chunkZ + balcony.z;
+      
+      // Balcony covers: center ± 1.0m in X (total 2.0m width)
+      // Balcony covers: shelterZ ± 1.0m in Z (total 2.0m depth)
+      if (this.checkAABBCollision(
+        playerX, playerZ, playerWidth, playerDepth,
+        shelterCenterX, shelterZ, BALCONY_WIDTH, BALCONY_DEPTH
+      )) {
+        // Player height is 1.8m, standing at y=0.1, so top is at 1.9m
+        // Balcony floor must be above 1.9m to provide shelter
+        const playerTopY = playerY + 1.8;
+        if (playerTopY < balcony.y - 0.1) {  // Add small buffer for safety
+          return true;
         }
       }
     }
@@ -141,7 +147,7 @@ export class WetMeter {
     }
   }
 
-  update(delta, playerPosition, chunks, cars, puddles) {
+  update(delta, playerPosition, chunks, cars, puddles, balconies = []) {
     if (this.gameState.getState() !== GameState.PLAYING) {
       return false;
     }
@@ -149,7 +155,7 @@ export class WetMeter {
     const playerX = playerPosition.x;
     const playerZ = playerPosition.z;
     
-    this.isUnderShelter = this.checkBalconyShelter(playerX, playerZ, chunks);
+    this.isUnderShelter = this.checkBalconyShelter(playerX, playerZ, chunks, balconies);
     
     if (this.isUnderShelter) {
       this.wetMeter = Math.max(0, this.wetMeter - RAIN.WETNESS_DRAIN_RATE * delta);
@@ -208,6 +214,7 @@ export class WetMeter {
     this.pushbackVelocity = 0;
     this.lastCarHitTime = 0;
     this.originalX = null;
+    this.windAngle = 0;
   }
 
   setOriginalX(x) {

@@ -1,21 +1,22 @@
 import * as THREE from 'three';
-import { materialCache } from '../utils/MaterialCache.js';
+import { materialCache, FACADE_KEYS } from '../utils/MaterialCache.js';
 
-const BUILDING_COLORS = [
-  'm-gray', 'm-blue', 'm-accent', 'm-light', 'm-dark',
-  'm-facade-1', 'm-facade-2', 'm-facade-3', 'm-facade-4',
-  'm-facade-5', 'm-facade-6', 'm-facade-7', 'm-facade-8'
-];
 const ACCENT_COLORS = ['m-red', 'm-accent', 'm-yellow', 'm-metal'];
-const WINDOW_FRAME_COLORS = ['m-black', 'm-dark', 'm-metal', 'm-gray'];
+const WINDOW_FRAME_COLORS = [0x555555, 0x777777, 0x444444, 0x666666, 0x8B7355, 0x4A5568, 0x2F4F4F, 0x696969];
 
 export class BuildingBuilder {
   constructor() {}
 
-  build(position = { x: 0, y: 0, z: 0 }, width = 2.5, height = 6, depth = 3, hasBalcony = false, side = 'left') {
+  build(position = { x: 0, y: 0, z: 0 }, width = 2.5, height = 6, depth = 3, hasBalcony = false, side = 'left', windowSystem = null) {
     const group = new THREE.Group();
 
-    const facadeMat = materialCache.get(BUILDING_COLORS[Math.floor(Math.random() * BUILDING_COLORS.length)]);
+    const facadeKey = FACADE_KEYS[Math.floor(Math.random() * FACADE_KEYS.length)];
+    group.userData.facadeKey = facadeKey;
+    group.userData.isBuilding = true;
+    group.userData.dripLines = [];
+
+    const facadeMat = materialCache.get(`facade-dry-${facadeKey}`).clone();
+    facadeMat.userData = { facadeKey, isFacade: true };
     const facadeAccentMat = materialCache.get(ACCENT_COLORS[Math.floor(Math.random() * ACCENT_COLORS.length)]);
     const frameMat = materialCache.get(WINDOW_FRAME_COLORS[Math.floor(Math.random() * WINDOW_FRAME_COLORS.length)]);
     const balconyMat = materialCache.get('m-balcony');
@@ -84,17 +85,49 @@ export class BuildingBuilder {
         }
         if (tooCloseToBalcony) continue;
 
-        const frameGeo = new THREE.BoxGeometry(0.06, windowHeight + 0.08, windowWidth + 0.08);
-        const windowFrame = new THREE.Mesh(frameGeo, frameMat);
+        // Check if this window overlaps with any other window in the same column
+        // by checking against already placed windows
+        const minWindowGap = 0.2; // Minimum gap between windows
+        for (let prevRow = 0; prevRow < row; prevRow++) {
+          const prevY = bottomY + windowSpacingY * (prevRow + 1);
+          let prevHeight = windowHeight;
+          // Check if previous window was moved under balcony
+          for (const balconyY of balconyYPositions) {
+            if (Math.abs(prevY - balconyY) < 1.0) {
+              prevHeight = 1.8;
+              break;
+            }
+          }
+          const prevTop = prevY + prevHeight / 2;
+          const currentBottom = y - currentWindowHeight / 2;
+          if (currentBottom < prevTop + minWindowGap) {
+            tooCloseToBalcony = true; // Reuse this flag
+            break;
+          }
+        }
+        if (tooCloseToBalcony) continue;
+
+        const frameGeo = new THREE.BoxGeometry(0.06, currentWindowHeight + 0.08, windowWidth + 0.08);
+        const frameColor = WINDOW_FRAME_COLORS[Math.floor(Math.random() * WINDOW_FRAME_COLORS.length)];
+        const windowFrame = new THREE.Mesh(frameGeo, new THREE.MeshStandardMaterial({ 
+          color: frameColor, 
+          roughness: 0.7, 
+          metalness: 0.2
+        }));
         windowFrame.position.set(facadeX, y, z);
         windowFrame.castShadow = false;
         windowFrame.receiveShadow = false;
         group.add(windowFrame);
 
-        const isLit = Math.random() > 0.4;
-        const glassGeo = new THREE.BoxGeometry(0.12, windowHeight - 0.1, windowWidth - 0.1);
-        const glassMat = new THREE.MeshBasicMaterial({
-          color: isLit ? 0xFFFF00 : 0x333333
+        const glassGeo = new THREE.BoxGeometry(0.12, currentWindowHeight - 0.1, windowWidth - 0.2);
+        const isLit = Math.random() > 0.5;
+        const glassMat = new THREE.MeshStandardMaterial({
+          color: 0x888888,
+          roughness: 0.2,
+          metalness: 0.7,
+          emissive: isLit ? 0xFFFF00 : 0x222222,
+          emissiveIntensity: isLit ? 0.8 : 0.2,
+          transparent: false
         });
         const glass = new THREE.Mesh(glassGeo, glassMat);
         glass.position.set(facadeX + (roadDir * 0.06), y, z);
@@ -176,8 +209,12 @@ export class BuildingBuilder {
         group.add(balconyWindowFrame);
 
         const balconyGlassGeo = new THREE.PlaneGeometry(balconyWindowWidth - 0.1, balconyWindowHeight - 0.1);
-        const balconyGlassMat = new THREE.MeshBasicMaterial({ 
+        const balconyGlassMat = new THREE.MeshStandardMaterial({ 
           color: 0xFFFF00,
+          roughness: 0.3,
+          metalness: 0.1,
+          emissive: 0xFFFF00,
+          emissiveIntensity: 0.8,
           side: THREE.DoubleSide
         });
         const balconyGlass = new THREE.Mesh(balconyGlassGeo, balconyGlassMat);
@@ -211,6 +248,7 @@ export class BuildingBuilder {
         const door = new THREE.Mesh(doorGeo, doorMat);
         door.position.set(facadeX + (roadDir * doorThickness / 2), doorY, 0);
         door.castShadow = true;
+        door.userData.isDoor = true;
         group.add(door);
         
         // Door frame
@@ -225,10 +263,28 @@ export class BuildingBuilder {
         const handleMat = materialCache.get('m-red');
         const handle = new THREE.Mesh(handleGeo, handleMat);
         handle.rotation.x = Math.PI / 2;
-        // Position relative to door center (door is at facadeX + roadDir * doorThickness/2)
-        handle.position.set(roadDir * doorThickness / 2 + doorThickness, -0.25, 0.35);
+        // Position on door surface (door is at facadeX + roadDir * doorThickness/2)
+        // Handle local position relative to door center
+        handle.position.set(roadDir * doorThickness / 2, -0.25, 0.35);
         handle.castShadow = false;
-        door.add(handle); // Add to door so it moves with door
+        handle.userData.isDoorHandle = true;
+        door.add(handle);
+
+        const numDrips = 2 + Math.floor(Math.random() * 3);
+        for (let d = 0; d < numDrips; d++) {
+          const dripGeo = new THREE.BoxGeometry(0.02, 0.5, 0.02);
+          const dripMat = materialCache.get('m-blue');
+          const drip = new THREE.Mesh(dripGeo, dripMat);
+          const dripZ = (Math.random() - 0.5) * (balconyLength - 1);
+          const baseY = currentBalconyY - 0.05;
+          drip.position.set(balconyX + roadDir * (balconyProtrusion / 2 + 0.01), baseY, dripZ);
+          drip.scale.y = 0.1;
+          drip.userData.isDripLine = true;
+          drip.userData.phase = Math.random() * Math.PI * 2;
+          drip.userData.baseY = baseY;
+          group.add(drip);
+          group.userData.dripLines.push(drip);
+        }
       }
     }
 

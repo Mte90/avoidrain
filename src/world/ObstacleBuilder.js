@@ -124,17 +124,18 @@ export class ObstacleBuilder {
     
     const poleMat = materialCache.get('m-dark');
     
+    const baseSize = 0.4;
+    const baseHeight = 0.1;
+    
     const poleHeight = 3.0;
     const poleRadius = 0.12;
     const poleGeo = new THREE.CylinderGeometry(poleRadius, poleRadius, poleHeight, 12);
     const pole = new THREE.Mesh(poleGeo, poleMat);
-    pole.position.y = poleHeight / 2;
+    pole.position.y = baseHeight + poleHeight / 2;
     pole.castShadow = true;
     pole.receiveShadow = true;
     group.add(pole);
     
-    const baseSize = 0.4;
-    const baseHeight = 0.1;
     const baseGeo = new THREE.BoxGeometry(baseSize, baseHeight, baseSize);
     const baseMat = materialCache.get('m-black', { color: 0x1a1a1a });
     const base = new THREE.Mesh(baseGeo, baseMat);
