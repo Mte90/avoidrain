@@ -621,15 +621,15 @@ export class ChunkManager {
       }
       if (tooClose) continue;
       
-      const doorZones = [3, 8, 13, 18, 23, 28, 33, 38];
-      let nearDoor = false;
-      for (const doorZ of doorZones) {
-        if (Math.abs(localZ - doorZ) < 4) {
-          nearDoor = true;
+      let nearBuilding = false;
+      for (const building of this.buildings) {
+        if (building.chunkZ !== chunkZ) continue;
+        if (Math.abs(localZ - building.group.position.z) < 10) {
+          nearBuilding = true;
           break;
         }
       }
-      if (nearDoor) continue;
+      if (nearBuilding) continue;
       
       usedPositions.push({ side, z: localZ });
       

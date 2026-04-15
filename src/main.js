@@ -405,15 +405,23 @@ export class Game {
       this.powerUpManager.update(delta, playerPos);
       this.juiceSystem.update(delta);
       
+      // Storm visual effects: fog density + random thunder
       if (this.difficultyManager.isStorm()) {
         this.scene.fog.near = FOG.DENSE_NEAR;
         this.scene.fog.far = FOG.DENSE_FAR;
+        this.scene.fog.density = 0.025; // Dense fog during storm
+        // Random thunder during storm (0.2% chance per frame)
+        if (Math.random() < 0.002) {
+          this.audioManager.playThunder();
+        }
       } else if (this.difficultyManager.isCalm()) {
         this.scene.fog.near = FOG.LIGHT_NEAR;
         this.scene.fog.far = FOG.LIGHT_FAR;
+        this.scene.fog.density = 0.012; // Light fog during calm
       } else {
         this.scene.fog.near = FOG.NEAR;
         this.scene.fog.far = FOG.FAR;
+        this.scene.fog.density = 0.02; // Default fog density
       }
     }
 

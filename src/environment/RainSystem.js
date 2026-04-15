@@ -12,7 +12,7 @@ export class RainSystem {
     this.rainIntensity = rainIntensity;
     this.difficultyManager = null;
     this.playerPosition = new THREE.Vector3(0, 0, 0);
-    this.windAngle = 0;
+    this.windAngle = 0.15;
     
     this.velocities = new Float32Array(RAIN_COUNT);
     this.initialVelocities = new Float32Array(RAIN_COUNT);

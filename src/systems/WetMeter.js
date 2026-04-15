@@ -45,39 +45,40 @@ export class WetMeter {
     const playerWidth = PLAYER_RADIUS * 2;
     const playerDepth = PLAYER_RADIUS * 2;
     const playerY = 0.1;
+    const playerTopY = playerY + 1.8;
+    
+    let maxShelterFactor = 0;
     
     for (const balcony of balconies) {
-      // Balcony protrudes 2.5m from building edge
-      // Left building at x=-6.5, width=2.5 → building right edge at -5.25
-      // Balcony extends from -5.25 to -2.75 (center at -4.0)
-      // Right building at x=6.5, width=2.5 → building left edge at 5.25
-      // Balcony extends from 5.25 to 2.75 (center at 4.0)
       const buildingWidth = 2.5;
       const balconyProtrusion = 2.5;
       
       const buildingEdge = balcony.x < 0 
-        ? balcony.x + buildingWidth / 2  // Right edge of left building
-        : balcony.x - buildingWidth / 2;  // Left edge of right building
+        ? balcony.x + buildingWidth / 2
+        : balcony.x - buildingWidth / 2;
       
       const shelterCenterX = buildingEdge + (balcony.x < 0 ? balconyProtrusion / 2 : -balconyProtrusion / 2);
       const shelterZ = balcony.chunkZ + balcony.z;
       
-      // Balcony covers: center ± 1.0m in X (total 2.0m width)
-      // Balcony covers: shelterZ ± 1.0m in Z (total 2.0m depth)
+      const windShift = this.windAngle * 1.0;
+      const effectiveShelterX = shelterCenterX + windShift;
+      
       if (this.checkAABBCollision(
         playerX, playerZ, playerWidth, playerDepth,
-        shelterCenterX, shelterZ, BALCONY_WIDTH, BALCONY_DEPTH
+        effectiveShelterX, shelterZ, BALCONY_WIDTH, BALCONY_DEPTH
       )) {
-        // Player height is 1.8m, standing at y=0.1, so top is at 1.9m
-        // Balcony floor must be above 1.9m to provide shelter
-        const playerTopY = playerY + 1.8;
-        if (playerTopY < balcony.y - 0.1) {  // Add small buffer for safety
-          return true;
-        }
+        const verticalDistance = balcony.y - playerTopY;
+        
+        if (verticalDistance <= 0) continue;
+        
+        const maxEffectiveDistance = 3.0;
+        const shelterFactor = Math.max(0, 1 - (verticalDistance / maxEffectiveDistance));
+        
+        maxShelterFactor = Math.max(maxShelterFactor, shelterFactor);
       }
     }
     
-    return false;
+    return maxShelterFactor;
   }
 
   checkHasBalcony(buildingGroup) {
@@ -157,8 +158,9 @@ export class WetMeter {
     
     this.isUnderShelter = this.checkBalconyShelter(playerX, playerZ, chunks, balconies);
     
-    if (this.isUnderShelter) {
-      this.wetMeter = Math.max(0, this.wetMeter - RAIN.WETNESS_DRAIN_RATE * delta);
+    if (this.isUnderShelter > 0) {
+      const effectiveDrainRate = RAIN.WETNESS_DRAIN_RATE * this.isUnderShelter;
+      this.wetMeter = Math.max(0, this.wetMeter - effectiveDrainRate * delta);
     } else {
       this.wetMeter = Math.min(100, this.wetMeter + RAIN.WETNESS_FILL_RATE * delta);
     }

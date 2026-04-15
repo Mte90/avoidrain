@@ -19,27 +19,26 @@ export class ObstacleBuilder {
     const canColor = TRASH_CAN_COLORS[Math.floor(Math.random() * TRASH_CAN_COLORS.length)];
     const canMat = materialCache.get('m-gray');
     
-    // Sidewalk height is 0.15, so trash can sits on top of it
-    const sidewalkHeight = 0.15;
+    const baseHeight = 0.1;
     
     const bodyRadius = 0.5;
     const bodyHeight = 1.0;
     const bodyGeo = new THREE.CylinderGeometry(bodyRadius, bodyRadius * 0.85, bodyHeight, 16);
     const body = new THREE.Mesh(bodyGeo, canMat);
-    body.position.y = sidewalkHeight + bodyHeight / 2;
+    body.position.y = baseHeight + bodyHeight / 2;
     body.castShadow = true;
     body.receiveShadow = true;
     group.add(body);
     
     const bottomGeo = new THREE.CylinderGeometry(bodyRadius * 0.9, bodyRadius * 0.7, 0.15, 16);
     const bottom = new THREE.Mesh(bottomGeo, canMat);
-    bottom.position.y = sidewalkHeight;
+    bottom.position.y = baseHeight / 2;
     bottom.receiveShadow = true;
     group.add(bottom);
     
     const topGeo = new THREE.CylinderGeometry(bodyRadius * 0.85, bodyRadius, 0.12, 16);
     const top = new THREE.Mesh(topGeo, canMat);
-    top.position.y = sidewalkHeight + bodyHeight;
+    top.position.y = baseHeight + bodyHeight;
     top.receiveShadow = true;
     group.add(top);
     
@@ -47,7 +46,7 @@ export class ObstacleBuilder {
     const lidGeo = new THREE.CylinderGeometry(lidRadius, lidRadius, 0.12, 16);
     const lidMat = materialCache.get('m-dark');
     const lid = new THREE.Mesh(lidGeo, lidMat);
-    lid.position.y = sidewalkHeight + bodyHeight + 0.06;
+    lid.position.y = baseHeight + bodyHeight + 0.06;
     lid.castShadow = true;
     group.add(lid);
     
@@ -135,7 +134,7 @@ export class ObstacleBuilder {
     const poleRadius = 0.12;
     const poleGeo = new THREE.CylinderGeometry(poleRadius, poleRadius, poleHeight, 12);
     const pole = new THREE.Mesh(poleGeo, poleMat);
-    pole.position.y = sidewalkHeight + baseHeight + poleHeight / 2;
+    pole.position.y = baseHeight + poleHeight / 2;
     pole.castShadow = true;
     pole.receiveShadow = true;
     group.add(pole);
@@ -143,7 +142,7 @@ export class ObstacleBuilder {
     const baseGeo = new THREE.BoxGeometry(baseSize, baseHeight, baseSize);
     const baseMat = materialCache.get('m-black', { color: 0x1a1a1a });
     const base = new THREE.Mesh(baseGeo, baseMat);
-    base.position.y = sidewalkHeight + baseHeight / 2;
+    base.position.y = baseHeight / 2;
     base.receiveShadow = true;
     group.add(base);
     
