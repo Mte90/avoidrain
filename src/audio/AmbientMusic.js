@@ -15,27 +15,36 @@ export class AmbientMusic {
     this.scheduleTime = 0;
     this.nextNoteTime = 0;
     this.current16thNote = 0;
-    this.tempo = 90; // BPM
-    this.lookahead = 25.0; // milliseconds
-    this.scheduleAheadTime = 0.1; // seconds
+    this.tempo = 70;
+    this.baseTempo = 70;
+    this.lookahead = 25.0;
+    this.scheduleAheadTime = 0.1;
     this.timerID = null;
+    this.difficultyManager = null;
+    this.padGainNodes = [];
+    this.bassGainNode = null;
     
-    // Musical scales
-    this.pentatonicScale = [220, 261.63, 293.66, 329.63, 392, 440]; // A minor pentatonic
+    this.pentatonicScale = [220, 261.63, 293.66, 329.63, 392, 440, 523.25];
     this.chordNotes = {
-      Am: [220, 277.18, 329.63], // A minor
-      Dm: [146.83, 174.61, 220], // D minor
-      E7: [164.81, 196.00, 233.08, 261.63], // E7
-      G: [196.00, 246.94, 293.66] // G major
+      Am: [220, 261.63, 329.63],
+      Dm: [146.83, 174.61, 220],
+      E7: [164.81, 207.65, 246.94, 293.66],
+      G: [196.00, 246.94, 293.66],
+      Cmaj7: [261.63, 329.63, 392.00, 493.88],
+      F: [174.61, 220.00, 261.63]
     };
+    this.currentChord = 'Am';
     
-    // Drum sounds
     this.lastKickTime = 0;
     this.lastSnareTime = 0;
     this.lastHihatTime = 0;
     
     this.volume = parseFloat(localStorage.getItem('avoidrain-volume')) || 0.4;
     this.isMuted = localStorage.getItem('avoidrain-mute') === 'true';
+  }
+
+  setDifficultyManager(dm) {
+    this.difficultyManager = dm;
   }
 
   async init() {
@@ -249,30 +258,36 @@ export class AmbientMusic {
   }
 
   createAmbientPad() {
-    const frequencies = [220, 277.18, 329.63, 440]; // A major chord
+    const frequencies = [220, 261.63, 329.63, 392, 523.25];
     
-    frequencies.forEach((freq) => {
+    frequencies.forEach((freq, i) => {
       const osc = this.audioContext.createOscillator();
       const gain = this.audioContext.createGain();
       const filter = this.audioContext.createBiquadFilter();
+      const panner = this.audioContext.createStereoPanner();
       
-      osc.type = 'triangle';
+      osc.type = i < 2 ? 'triangle' : 'sine';
       osc.frequency.value = freq;
       
       filter.type = 'lowpass';
-      filter.frequency.value = 600;
-      filter.Q.value = 0.5;
+      filter.frequency.value = 800;
+      filter.Q.value = 2;
       
-      gain.gain.value = this.isMuted ? 0 : 0.03 * this.volume;
+      panner.pan.value = (i % 2 === 0) ? -0.3 : 0.3;
+      
+      const baseGain = 0.025 * this.volume;
+      gain.gain.value = this.isMuted ? 0 : baseGain;
       
       osc.connect(filter);
-      filter.connect(gain);
+      filter.connect(panner);
+      panner.connect(gain);
       gain.connect(this.audioContext.destination);
       
       osc.start();
       this.oscillators.push(osc);
       this.gainNodes.push(gain);
       this.filters.push(filter);
+      this.padGainNodes.push({ gain, filter, panner, baseFreq: freq });
     });
   }
 
@@ -325,6 +340,31 @@ export class AmbientMusic {
         this.gainNodes.push(gain);
       }
     }, 500);
+  }
+
+  update() {
+    if (!this.difficultyManager || !this.isPlaying || !this.audioContext) return;
+    
+    const intensity = this.difficultyManager.getRainIntensity();
+    const targetTempo = this.baseTempo + (intensity * 40);
+    this.tempo += (targetTempo - this.tempo) * 0.05;
+    
+    this.padGainNodes.forEach((pad, i) => {
+      const filterMod = 400 + (intensity * 1200);
+      const baseGain = 0.02 + (intensity * 0.03);
+      
+      if (pad.filter && pad.filter.frequency) {
+        pad.filter.frequency.setTargetAtTime(filterMod, this.audioContext.currentTime, 0.5);
+      }
+      if (pad.gain && pad.gain.gain) {
+        const targetGain = this.isMuted ? 0 : baseGain * this.volume;
+        pad.gain.gain.setTargetAtTime(targetGain, this.audioContext.currentTime, 0.3);
+      }
+      if (pad.panner && pad.panner.pan) {
+        const panValue = Math.sin(this.audioContext.currentTime * 0.5 + i) * 0.4;
+        pad.panner.pan.setTargetAtTime(panValue, this.audioContext.currentTime, 0.5);
+      }
+    });
   }
 
   setVolume(value) {

@@ -65,6 +65,7 @@ export class ChunkManager {
     this.balconies = [];
     this.buildings = [];
     this.dripLines = [];
+    this.doorPositions = [];  // Track door positions to avoid obstacle overlap
     
     this.puddleBuilder = new PuddleBuilder();
     this.lastGeneratedChunkZ = 0;
@@ -127,6 +128,7 @@ export class ChunkManager {
   resize(position = { x: 0, y: 0, z: 0 }) {
     this.playerZ = position.z;
     this.buildingPositions = [];
+    this.doorPositions = [];
     const endZ = position.z + this.chunkAheadDistance;
     this.currentChunkZ = this.getChunkStart(position.z - this.chunkAheadDistance);
     
@@ -220,6 +222,8 @@ export class ChunkManager {
           const balconyFloorY = 0.15 + leftHeight * 0.35;
           this.balconies.push({ side: 'left', x: -6.5, z: bz + (Math.random() - 0.5), chunkZ, y: balconyFloorY });
         }
+        const leftBuildingZ = bz + leftBuilding.position.z;
+        this.doorPositions.push({ side: 'left', x: -6.0, z: leftBuildingZ, chunkZ });
       }
 
       const rightHeight = 6 + Math.random() * 18;  // 6-24 units
@@ -264,6 +268,8 @@ export class ChunkManager {
           const balconyFloorY = 0.15 + rightHeight * 0.35;
           this.balconies.push({ side: 'right', x: 6.5, z: bz + (Math.random() - 0.5), chunkZ, y: balconyFloorY });
         }
+        const rightBuildingZ = bz + rightBuilding.position.z;
+        this.doorPositions.push({ side: 'right', x: 6.0, z: rightBuildingZ, chunkZ });
       }
     }
     
@@ -591,7 +597,9 @@ export class ChunkManager {
     const obstacleTypes = ['trashCan', 'bench', 'sign'];
     const usedPositions = [];
     const chunkBalconies = this.balconies.filter(b => b.chunkZ === chunkZ);
-    const SIGN_POST_POLE_TOP_Y = 2.0;  // Pole height 3.0, so top is at Y=1.5
+    const chunkDoors = this.doorPositions.filter(d => d.chunkZ === chunkZ);
+    const SIGN_POST_POLE_TOP_Y = 2.0;
+    const DOOR_CLEARANCE = 3.5;
     
     for (let i = 0; i < obstacleCount; i++) {
       const side = Math.random() > 0.5 ? 'left' : 'right';
@@ -599,9 +607,15 @@ export class ChunkManager {
       const localZ = -length/2 + 10 + (i * spawnInterval) + Math.random() * 8;
       const worldZ = chunkZ + localZ;
       
-      // Check for sign posts - don't place under ANY low balcony
       const balconiesAtPos = chunkBalconies.filter(b => b.side === side && Math.abs(b.z - localZ) < 3);
       if (balconiesAtPos.some(b => b.y < SIGN_POST_POLE_TOP_Y)) continue;
+      
+      const nearDoor = chunkDoors.some(d => {
+        if (d.side !== side) return false;
+        const doorWorldZ = chunkZ + d.z;
+        return Math.abs(worldZ - doorWorldZ) < DOOR_CLEARANCE;
+      });
+      if (nearDoor) continue;
       
       let tooClose = false;
       for (const pos of usedPositions) {
@@ -635,8 +649,9 @@ export class ChunkManager {
       
       const type = obstacleTypes[Math.floor(Math.random() * obstacleTypes.length)];
       const obstacle = this.obstacleBuilder.build({ x: 0, y: 0, z: 0 }, type, side);
-      const benchX = type === 'bench' ? (side === 'left' ? -4.5 : 4.5) : sidewalkX;
-      const benchY = type === 'bench' ? 0.15 : 0.5;
+      const benchX = type === 'bench' ? (side === 'left' ? -4.2 : 4.2) : sidewalkX;
+      const SIDEWALK_SURFACE = 0.15;
+      const benchY = SIDEWALK_SURFACE;
       obstacle.position.set(benchX, benchY, localZ);
       
       obstacle.userData.side = side;
@@ -834,6 +849,7 @@ export class ChunkManager {
           pos => pos.chunkZ !== removedChunkZ
         );
         this.balconies = this.balconies.filter(b => b.chunkZ !== removedChunkZ);
+        this.doorPositions = this.doorPositions.filter(d => d.chunkZ !== removedChunkZ);
         this.buildings = this.buildings.filter(b => b.chunkZ !== removedChunkZ);
         this.dripLines = this.dripLines.filter(d => d.chunkZ !== removedChunkZ);
         this.obstacles = this.obstacles.filter(o => o.chunkZ !== removedChunkZ);
@@ -884,6 +900,7 @@ export class ChunkManager {
           pos => pos.chunkZ !== removedChunkZ
         );
         this.balconies = this.balconies.filter(b => b.chunkZ !== removedChunkZ);
+        this.doorPositions = this.doorPositions.filter(d => d.chunkZ !== removedChunkZ);
         this.buildings = this.buildings.filter(b => b.chunkZ !== removedChunkZ);
         this.dripLines = this.dripLines.filter(d => d.chunkZ !== removedChunkZ);
         this.obstacles = this.obstacles.filter(o => o.chunkZ !== removedChunkZ);

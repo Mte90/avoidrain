@@ -75,6 +75,7 @@ export class Game {
     this.scoreManager = new ScoreManager();
     this.audioManager = audioManager;
     this.uiManager = new UIManager();
+    ambientMusic.setDifficultyManager(this.difficultyManager);
 
     this.player = new PlayerController(this.input, this.difficultyManager, this.gameState);
     this.player.setCamera(this.camera);
@@ -404,6 +405,7 @@ export class Game {
       
       this.powerUpManager.update(delta, playerPos);
       this.juiceSystem.update(delta);
+      ambientMusic.update();
       
       // Storm visual effects: fog density + random thunder
       if (this.difficultyManager.isStorm()) {
