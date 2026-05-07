@@ -220,7 +220,8 @@ export class ChunkManager {
         }
         if (balconyConfig.leftHasBalcony) {
           const balconyFloorY = 0.15 + leftHeight * 0.35;
-          this.balconies.push({ side: 'left', x: -6.5, z: bz + (Math.random() - 0.5), chunkZ, y: balconyFloorY });
+          const balconyZ = leftBuilding.position.z;
+          this.balconies.push({ side: 'left', x: -6.5, z: balconyZ, chunkZ, y: balconyFloorY });
         }
         const leftBuildingZ = bz + leftBuilding.position.z;
         this.doorPositions.push({ side: 'left', x: -6.0, z: leftBuildingZ, chunkZ });
@@ -266,7 +267,8 @@ export class ChunkManager {
         }
         if (balconyConfig.rightHasBalcony) {
           const balconyFloorY = 0.15 + rightHeight * 0.35;
-          this.balconies.push({ side: 'right', x: 6.5, z: bz + (Math.random() - 0.5), chunkZ, y: balconyFloorY });
+          const balconyZ = rightBuilding.position.z;
+          this.balconies.push({ side: 'right', x: 6.5, z: balconyZ, chunkZ, y: balconyFloorY });
         }
         const rightBuildingZ = bz + rightBuilding.position.z;
         this.doorPositions.push({ side: 'right', x: 6.0, z: rightBuildingZ, chunkZ });
@@ -517,11 +519,15 @@ export class ChunkManager {
     
     for (let localZ = -length / 2 + 8; localZ < length / 2; localZ += spawnInterval) {
       const isLeftLamp = (Math.floor((localZ - (-length / 2 + 8)) / spawnInterval) % 2 === 0);
-      const balconiesAtLeft = chunkBalconies.filter(b => b.side === 'left' && Math.abs(b.z - localZ) < 3);
-      const balconiesAtRight = chunkBalconies.filter(b => b.side === 'right' && Math.abs(b.z - localZ) < 3);
+      const BALCONY_Z_CHECK = 15;
+      const balconiesAtLeft = chunkBalconies.filter(b => b.side === 'left' && Math.abs(b.z - localZ) < BALCONY_Z_CHECK);
+      const balconiesAtRight = chunkBalconies.filter(b => b.side === 'right' && Math.abs(b.z - localZ) < BALCONY_Z_CHECK);
       
-      if (balconiesAtLeft.some(b => b.y < STREET_LAMP_HEIGHT)) continue;
-      if (balconiesAtRight.some(b => b.y < STREET_LAMP_HEIGHT)) continue;
+      if (isLeftLamp) {
+        if (balconiesAtLeft.some(b => b.y < STREET_LAMP_HEIGHT)) continue;
+      } else {
+        if (balconiesAtRight.some(b => b.y < STREET_LAMP_HEIGHT)) continue;
+      }
       
       if (isLeftLamp) {
         const leftLamp = streetLampBuilder.build({ x: -3.5, y: 0.15, z: 0 });
@@ -598,7 +604,7 @@ export class ChunkManager {
     const usedPositions = [];
     const chunkBalconies = this.balconies.filter(b => b.chunkZ === chunkZ);
     const chunkDoors = this.doorPositions.filter(d => d.chunkZ === chunkZ);
-    const SIGN_POST_POLE_TOP_Y = 2.0;
+    const SIGN_POST_POLE_TOP_Y = 3.2;
     const DOOR_CLEARANCE = 3.5;
     
     for (let i = 0; i < obstacleCount; i++) {
@@ -817,11 +823,13 @@ export class ChunkManager {
       
       if (balconyConfig.leftHasBalcony) {
         const balconyFloorY = 0.15 + leftHeight * 0.35;
-        this.balconies.push({ side: 'left', x: -6.5, z: bz + (Math.random() - 0.5), chunkZ, y: balconyFloorY });
+        const balconyZ = leftBuilding.position.z;
+        this.balconies.push({ side: 'left', x: -6.5, z: balconyZ, chunkZ, y: balconyFloorY });
       }
       if (balconyConfig.rightHasBalcony) {
         const balconyFloorY = 0.15 + rightHeight * 0.35;
-        this.balconies.push({ side: 'right', x: 6.5, z: bz + (Math.random() - 0.5), chunkZ, y: balconyFloorY });
+        const balconyZ = rightBuilding.position.z;
+        this.balconies.push({ side: 'right', x: 6.5, z: balconyZ, chunkZ, y: balconyFloorY });
       }
     }
     this.spawnCarsForChunk(chunk, chunkZ);
